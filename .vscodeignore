@@ -1,11 +1,13 @@
 node_modules/
 .vscode/
+out/
 src/
 test/
 backup/
 -install/
 *.map
 *.ts
+*.vsix
 .git/
 .gitignore
 .vscodeignore
