@@ -1,13 +1,11 @@
 node_modules/
 .vscode/
-out/
 src/
 test/
 backup/
 -install/
 *.map
 *.ts
-*.vsix
 .git/
 .gitignore
 .vscodeignore
@@ -16,5 +14,4 @@ xpackage.json
 .DS_Store
 publish.sh
 *.log
-coverage
 .vs
