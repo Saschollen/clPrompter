@@ -1,0 +1,23 @@
+CHKDDE:     PGM        PARM(&LIB)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+             DCLF       FILE(QADSPOBJ)
+             MONMSG     MSGID(CPF0000)
+             DSPOBJD    OBJ(&LIB/*ALL) OBJTYPE(*FILE) +
+                          OUTPUT(*OUTFILE) OUTFILE(QTEMP/COZCHKDDE)
+             OVRDBF     FILE(QADSPOBJ) TOFILE(QTEMP/COZCHKDDE) +
+                          LVLCHK(*NO)
+             CHGJOB     LOG(2 30 *MSG) LOGCLPGM(*NO) LOGOUTPUT(*JOBEND)
+ READNEXT:   RCVF       RCDFMT(QLIDOBJD)
+             MONMSG     MSGID(CPF0864) EXEC(DO)
+                GOTO  EOF
+             ENDDO
+             IF         (%SST(&ODOBAT 01 02) = 'PF') THEN(DO)
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) MSGDTA('Testing +
+                          file' *BCAT &ODOBNM *BCAT 'in' *BCAT &ODLBNM)
+             RUNQRYF    FILE(&ODLBNM/&ODOBNM) OUTPUT(*FILE) +
+                          OUTFILE(QTEMP/('Q' *CAT %SST(&ODOBNM 2 9)))
+             DLTF       FILE(QTEMP/('Q' *CAT %SST(&ODOBNM 2 9)))
+             ENDDO
+             GOTO READNEXT
+ EOF:
+ ENDPGM:     ENDPGM

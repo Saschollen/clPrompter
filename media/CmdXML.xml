@@ -1,0 +1,181 @@
+<QcdCLCmd DTDVersion="2.0">
+    <Cmd CmdName="RUNIQRYF" CmdLib="IQUERY" CCSID="37" HlpPnlGrp="RUNIQRYF" HlpPnlGrpLib="IQUERY" HlpID="RUNIQRYF" MaxPos="99" PrdLib="IQUERY" Prompt="Run ad hoc iQuery" PromptMsgID="QFC0100" MsgF="COZLANGEN" MsgFLib="IQUERY" PmtFile="COZLANGEN" PmtFileLib="IQUERY" PmtFileMsg="DYNAMIC" ExecBatch="YES" ChgCmdExit="NO" RtvCmdExit="NO">
+        <Parm Kwd="FILE" PosNbr="1" KeyParm="NO" ListDspl="INT2" RtnVal="NO" PassVal="DFT" Type="ELEM" Min="1" Max="1" Prompt="Database file to query" PromptMsgID="QFC0101" Rstd="NO" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*ACTJOB, *ALLOBJAUT...">
+            <SngVal>
+                <Value Val="*ACTJOB" MapTo="*ACTJOB"/>
+                <Value Val="*ALLOBJAUT" MapTo="*ALLOBJ"/>
+                <Value Val="*ALLUSR" MapTo="*ALLUSR"/>
+                <Value Val="*DB2PTF" MapTo="*DB2PTF"/>
+                <Value Val="*DSK" MapTo="*DSK"/>
+                <Value Val="*GRPPRF" MapTo="*GRPPRF"/>
+                <Value Val="*IBMBLOG" MapTo="*IBMBLOG"/>
+                <Value Val="*JOBLOG" MapTo="*JOBLOG"/>
+                <Value Val="*JOBSCD" MapTo="*JOBSCD"/>
+                <Value Val="*JOBSCDE" MapTo="*JOBSCDE"/>
+                <Value Val="*LIBL" MapTo="*LIBL"/>
+                <Value Val="*OBJ" MapTo="*OBJ"/>
+                <Value Val="*PTFBKPLVL" MapTo="*PTFBKPLVL"/>
+                <Value Val="*PTFGRP" MapTo="*PTFGRP"/>
+                <Value Val="*RCDLCK" MapTo="*RCDLCK"/>
+                <Value Val="*SPCVAL" MapTo="*SPCVAL"/>
+                <Value Val="*SYS" MapTo="*SYS"/>
+                <Value Val="*SYSVAL" MapTo="*SYSVAL"/>
+                <Value Val="*TCPIP" MapTo="*TCPIP"/>
+                <Value Val="*TOPHOGS" MapTo="*TOPHOGS"/>
+                <Value Val="*USRGRP" MapTo="*USRGRP"/>
+                <Value Val="*USRPRF" MapTo="*USRPRF"/>
+                <Value Val="*COZXREF" MapTo="*COZXREF"/>
+                <Value Val="*COZFUNC" MapTo="*COZFUNC"/>
+            </SngVal>
+            <Elem Type="QUAL" Min="1" Max="1" Prompt="Table" PromptMsgID="QFC0138" Rstd="NO" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" IsDtaAra="NO" IsFile="NO" IsPgm="NO">
+                <Qual Type="NAME" Min="1" Max="1" Len="128" Rstd="NO" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="INT2" PassAtr="NO" InlPmtLen="17" Choice="Name"></Qual>
+                <Qual Type="NAME" Min="0" Max="1" Prompt="Library" PromptMsgID="QFC0103" Len="128" Rstd="NO" Dft="*LIBL" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="INT2" PassAtr="NO" InlPmtLen="17" Choice="Name">
+                    <SpcVal>
+                        <Value Val="*CURLIB" MapTo="*CURLIB"/>
+                        <Value Val="*LIBL" MapTo="*LIBL"/>
+                        <Value Val="*USER" MapTo="*USER"/>
+                        <Value Val="*USRPRF" MapTo="*USRPRF"/>
+                    </SpcVal>
+                </Qual>
+            </Elem>
+            <Elem Type="NAME" Min="0" Max="1" Prompt="Remote database 3-level name" PromptMsgID="QFC0139" Len="64" Rstd="NO" Dft="*LOCAL" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="17" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="Name">
+                <SpcVal>
+                    <Value Val="*LOCAL" MapTo="*LOCAL"/>
+                </SpcVal>
+            </Elem>
+        </Parm>
+        <Parm Kwd="MBR" PosNbr="2" KeyParm="NO" RtnVal="NO" PassVal="DFT" Type="NAME" Min="0" Max="1" Prompt="Member name" PromptMsgID="QFC0102" Len="10" Rstd="NO" Dft="*FIRST" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="10" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="Name">
+            <SpcVal>
+                <Value Val="*FIRST" MapTo="*FIRST"/>
+                <Value Val="*LAST" MapTo="*LAST"/>
+                <Value Val="*FILE" MapTo="*FILE"/>
+            </SpcVal>
+        </Parm>
+        <Parm Kwd="OUTPUT" PosNbr="3" KeyParm="NO" RtnVal="NO" PassVal="DFT" Type="CHAR" Min="0" Max="1" Prompt="Output" PromptMsgID="QFC0104" Len="10" Rstd="YES" Dft="*" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*, *PRINT, *FILE, *PDF">
+            <SpcVal>
+                <Value Val="*" MapTo="*"/>
+                <Value Val="*PRINT" MapTo="*PRINT"/>
+                <Value Val="*FILE" MapTo="*FILE"/>
+                <Value Val="*PDF" MapTo="*PDF"/>
+                <Value Val="*TEXT" MapTo="*TEXT"/>
+                <Value Val="*CSV" MapTo="*CSV"/>
+                <Value Val="*STMF" MapTo="*STMF"/>
+                <Value Val="*XML" MapTo="*XML"/>
+                <Value Val="*HTML" MapTo="*HTML"/>
+                <Value Val="*EXCEL" MapTo="*EXCEL"/>
+                <Value Val="*XLSX" MapTo="*XLSX"/>
+                <Value Val="*JSON" MapTo="*JSON"/>
+                <Value Val="*SYLK" MapTo="*SLK"/>
+                <Value Val="*SLK" MapTo="*SLK"/>
+                <Value Val="*RPG" MapTo="*RPG"/>
+                <Value Val="*LIST" MapTo="*PRINT"/>
+                <Value Val="*CHART" MapTo="*CHART"/>
+                <Value Val="*CHARTJS" MapTo="*CHARTJS"/>
+                <Value Val="*DTAARA" MapTo="*DTAARA"/>
+                <Value Val="*OUTFILE" MapTo="*FILE"/>
+                <Value Val="*RPGIO" MapTo="*RPGIO"/>
+                <Value Val="*RPGI" MapTo="*RPGI"/>
+                <Value Val="*RPGO" MapTo="*RPGO"/>
+                <Value Val="*RPGDS" MapTo="*RPGDS"/>
+                <Value Val="*RPGDSO" MapTo="*RPGDSO"/>
+                <Value Val="*SQL" MapTo="*SQL"/>
+                <Value Val="*SQLDCL" MapTo="*SQLDCL"/>
+                <Value Val="*SQLEXEC" MapTo="*SQLEXEC"/>
+                <Value Val="*SQLSRC" MapTo="*SQLSRC"/>
+                <Value Val="*SQLSCRIPT" MapTo="*SQLSCRIPT"/>
+                <Value Val="*SQLIMMED" MapTo="*SQLIMMED"/>
+                <Value Val="*DISPLAY" MapTo="*"/>
+            </SpcVal>
+        </Parm>
+        <Parm Kwd="AS" PosNbr="23" KeyParm="NO" PmtCtl="PMTRQS" RtnVal="NO" PassVal="DFT" Type="NAME" Min="0" Max="1" Prompt="Correlation name (file alias)" PromptMsgID="QFC0105" Len="32" Rstd="NO" Dft="*NONE" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="INT2" PassAtr="NO" Case=… CmpVal="*XML"/>
+        <PmtCtlCond Rel="EQ" CmpVal="*SYLK"/>
+        <PmtCtlCond Rel="EQ" CmpVal="*SLK"/>
+        <PmtCtlCond Rel="EQ" CmpVal="*XLSX"/>
+        <PmtCtlCond Rel="EQ" CmpVal="*HTML"/>
+        <PmtCtlCond Rel="EQ" CmpVal="*JSON"/>
+    </PmtCtl>
+</Parm>
+<Parm Kwd="STMFHDR" PosNbr="21" KeyParm="NO" RtnVal="NO" PassVal="DFT" Type="LGL" Min="0" Max="1" Prompt="Insert Content-Type Header" Len="1" Rstd="YES" Dft="*NO" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*YES, *NO">
+    <SpcVal>
+        <Value Val="*YES" MapTo="1"/>
+        <Value Val="*NO" MapTo="0"/>
+    </SpcVal>
+</Parm>
+<Parm Kwd="CSVOPT" PosNbr="22" KeyParm="NO" PmtCtl="PMTCTL" ListDspl="INT2" RtnVal="NO" PassVal="DFT" Type="ELEM" Min="0" Max="1" Prompt="CSV Options" PromptMsgID="QFC0130" Rstd="NO" AlwUnprt="YES" AlwVar="YES" Expr="NO" Full="NO" DspInput="YES" IsDtaAra="NO" IsFile="NO" IsPgm="NO">
+    <PmtCtl CtlKwd="OUTPUT" NbrTrueRel="GE" NbrTrue="1">
+        <PmtCtlCond Rel="EQ" CmpVal="*CSV"/>
+        <PmtCtlCond Rel="EQ" CmpVal="*CSV2"/>
+    </PmtCtl>
+    <Elem Type="INT4" Min="0" Max="1" Prompt="Headings" PromptMsgID="QFC0131" Rstd="YES" Dft="*COLHDG" AlwUnprt="YES" AlwVar="YES" Expr="NO" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*FLDNAME, *COLHDG, *NONE">
+        <SpcVal>
+            <Value Val="*NONE" MapTo="0"/>
+            <Value Val="*FLDNAME" MapTo="1"/>
+            <Value Val="*COLHDG" MapTo="2"/>
+            <Value Val="*FIELDS" MapTo="1"/>
+            <Value Val="*NOHDG" MapTo="0"/>
+            <Value Val="0" MapTo="0"/>
+            <Value Val="1" MapTo="1"/>
+            <Value Val="2" MapTo="2"/>
+            <Value Val="3" MapTo="3"/>
+        </SpcVal>
+    </Elem>
+    <Elem Type="INT4" Min="0" Max="1" Prompt="Trim blanks" PromptMsgID="QFC0132" Rstd="YES" Dft="*BOTH" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*BOTH, *RIGHT, *LEFT, *NONE">
+        <SpcVal>
+            <Value Val="*NONE" MapTo="0"/>
+            <Value Val="*RIGHT" MapTo="1"/>
+            <Value Val="*LEFT" MapTo="2"/>
+            <Value Val="*BOTH" MapTo="3"/>
+            <Value Val="0" MapTo="0"/>
+            <Value Val="1" MapTo="1"/>
+            <Value Val="2" MapTo="2"/>
+            <Value Val="3" MapTo="3"/>
+        </SpcVal>
+    </Elem>
+    <Elem Type="CHAR" Min="0" Max="1" Prompt="Quote symbol" PromptMsgID="QFC0133" Len="10" Rstd="NO" Dft="*QUOTE" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="10" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*QUOTE, *APOS, *BAR, *NONE...">
+        <SpcVal>
+            <Value Val="*QUOTE" MapTo="X&apos;7F&apos;"/>
+            <Value Val="*APOS" MapTo="X&apos;7D&apos;"/>
+            <Value Val="*BAR" MapTo="X&apos;4F&apos;"/>
+            <Value Val="*NONE" MapTo="X&apos;40&apos;"/>
+        </SpcVal>
+    </Elem>
+    <Elem Type="CHAR" Min="0" Max="1" Prompt="Quote Escape symbol" PromptMsgID="QFC0134" Len="10" Rstd="NO" Dft="*DBL" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="10" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*DBL, *ESC, *STRDLM, char...">
+        <SpcVal>
+            <Value Val="*STRDLM" MapTo="2"/>
+            <Value Val="*DBL" MapTo="2"/>
+            <Value Val="*ESC" MapTo="X&apos;E0&apos;"/>
+            <Value Val="*TRIM" MapTo="0"/>
+        </SpcVal>
+    </Elem>
+    <Elem Type="CHAR" Min="0" Max="1" Prompt="Separator symbol" PromptMsgID="QFC0135" Len="10" Rstd="NO" Dft="*COMMA" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="10" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*COMMA, *TAB, char...">
+        <SpcVal>
+            <Value Val="*COMMA" MapTo=","/>
+            <Value Val="*TAB" MapTo="X&apos;09&apos;"/>
+            <Value Val="*BAR" MapTo="X&apos;E0&apos;"/>
+        </SpcVal>
+    </Elem>
+    <Elem Type="CHAR" Min="0" Max="1" Prompt="End of line symbol(s)" PromptMsgID="QFC0137" Len="10" Rstd="NO" Dft="*CRLF" AlwUnprt="YES" AlwVar="YES" Expr="NO" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="10" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*CRLF, *CR, *LF, *LFCR, char..">
+        <SpcVal>
+            <Value Val="*LF" MapTo="X&apos;25&apos;"/>
+            <Value Val="*CR" MapTo="X&apos;0D&apos;"/>
+            <Value Val="*CRLF" MapTo="X&apos;0D25&apos;"/>
+            <Value Val="*LFCR" MapTo="X&apos;250D&apos;"/>
+        </SpcVal>
+    </Elem>
+    <Elem Type="CHAR" Min="0" Max="1" Prompt="Null value symbol" PromptMsgID="QFC0136" Len="1" Rstd="NO" Dft="*NONE" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="7" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*NONE, *DASH, *PLUS, *PERIOD..">
+        <SpcVal>
+            <Value Val="*NONE" MapTo="X&apos;40&apos;"/>
+            <Value Val="*DASH" MapTo="-"/>
+            <Value Val="*PLUS" MapTo="+"/>
+            <Value Val="*PERIOD" MapTo="."/>
+        </SpcVal>
+    </Elem>
+    <Elem Type="CHAR" Min="0" Max="1" Prompt="CSV data prefix" Len="10" Rstd="NO" Dft="*NONE" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="INT2" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="10" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="*NONE, *EQUALS, symbol...">
+        <SpcVal>
+            <Value Val="*NONE" MapTo="*NONE"/>
+            <Value Val="*EQUALS" MapTo="="/>
+        </SpcVal>
+    </Elem>
+</Parm>
+</Cmd>
+</QcdCLCmd>
