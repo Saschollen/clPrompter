@@ -5,4 +5,4 @@ out/
 *.log
 *.vsix
 .DS_Store
-bfg-*.jarjava -jar bfg-1.15.0.jar --delete-files 'bfg-*.jar' .
+bfg-*.jar
