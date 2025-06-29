@@ -20,8 +20,8 @@
     }
 
     .parm-instance {
-      margin-bottom: 0.5em;
-      padding-bottom: 0.5em;
+      margin-bottom: 0.2em;
+      padding-bottom: 0.2em;
       border-bottom: 1px dotted #ddd;
     }
 
@@ -51,32 +51,32 @@
 
     .form-label {
       display: inline-block;
-      width: 40ch;
+      width: 43ch;
       vertical-align: middle;
-      margin-bottom: 0.5em;
+      margin-bottom: 0.2em;
     }
 
     .form-input {
       vertical-align: middle;
-      margin-bottom: 0.5em;
+      margin-bottom: 0.2em;
     }
 
     .form-div {
-      margin-bottom: 0.5em;
+      margin-bottom: 0.2em;
     }
 
     .elem-group {
       border: 1.5px solid #bbb;
       border-radius: 6px;
-      margin-bottom: 1em;
-      padding: 0.8em 1em 0.5em 1em;
+      margin-bottom: 0.2em;
+      padding: 0.8em 1em 0.2em 1em;
       background: #f8f8f8;
     }
 
     .elem-group legend {
       font-weight: bold;
       color: #333;
-      padding: 0 0.5em;
+      padding: 0 0.2em;
     }
 
     button {
@@ -99,7 +99,7 @@
     .qual-group>div {
       display: flex;
       align-items: center;
-      margin-bottom: 0.5em;
+      margin-bottom: 0.2em;
       border: 1px dashed red;
       background: #ffe;
     }
@@ -107,7 +107,9 @@
 </head>
 
 <body>
+  <h2 id="mainTitle" style="margin-top:0; margin-bottom:0.5em;"></h2>
   <div style="margin-bottom: 1em;">
+
     <label for="clLabel" class="form-label">Label (optional):</label>
     <input type="text" id="clLabel" maxlength="10" style="width: 12ch;" />
   </div>
@@ -139,6 +141,7 @@
         const parser = new DOMParser();
         xmlDoc = parser.parseFromString(message.xml, "text/xml");
         parms = Array.from(xmlDoc.getElementsByTagName("Parm"));
+        setMainTitle();
         buildAllowedValsMap();
         loadForm();
       }
@@ -164,6 +167,16 @@
     function setLabel(val) {
       const labelInput = document.getElementById("clLabel");
       if (labelInput) labelInput.value = val || "";
+    }
+    function setMainTitle() {
+      if (!xmlDoc) return;
+      const cmdElem = xmlDoc.querySelector("Cmd");
+      if (!cmdElem) return;
+      const prompt = cmdElem.getAttribute("Prompt") || cmdElem.getAttribute("CmdName") || "CL Command";
+      const cmdName = cmdElem.getAttribute("CmdName") || "";
+      const title = `${prompt}${cmdName ? " (" + cmdName + ")" : ""} Prompt`;
+      const mainTitle = document.getElementById("mainTitle");
+      if (mainTitle) mainTitle.textContent = title;
     }
 
     function getDefaultForInput(input, parms) {
@@ -477,20 +490,35 @@
         // <Values>
         const values = parm.getElementsByTagName("Values");
         if (values.length > 0) {
-          vals = vals.concat(Array.from(values[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+          vals = vals.concat(Array.from(values[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
         }
-        // <Spcval>
-        const spcvals = parm.getElementsByTagName("Spcval");
+        // <SpcVal>
+        const spcvals = parm.getElementsByTagName("SpcVal");
         if (spcvals.length > 0) {
-          vals = vals.concat(Array.from(spcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+          vals = vals.concat(Array.from(spcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
         }
-        // <Sngval>
-        const sngvals = parm.getElementsByTagName("Sngval");
+        // <SngVal>
+        const sngvals = parm.getElementsByTagName("SngVal");
         if (sngvals.length > 0) {
-          vals = vals.concat(Array.from(sngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+          vals = vals.concat(Array.from(sngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
         }
-        if (vals.length > 0 && parm.getAttribute("Rstd") !== "Y") {
+        let hasSngval = sngvals.length > 0;
+        let hasSpcval = spcvals.length > 0;
+        let hasValues = values.length > 0;
+        let hasRange = parm.getElementsByTagName("Range").length > 0;
+
+        if (vals.length > 0) {
           allowedValsMap[kwd] = vals.filter(Boolean);
+          if (
+            parm.getAttribute("Rstd") === "Y" ||
+            (
+              (hasValues || hasRange) &&
+              !hasSngval &&
+              !hasSpcval
+            )
+          ) {
+            allowedValsMap[kwd]._noCustomInput = true;
+          }
         }
         // --- For each Elem ---
         const elems = parm.getElementsByTagName("Elem");
@@ -500,18 +528,33 @@
           const elemName = `${kwd}_ELEM${e}`;
           const elemValues = elem.getElementsByTagName("Values");
           if (elemValues.length > 0) {
-            elemVals = elemVals.concat(Array.from(elemValues[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+            elemVals = elemVals.concat(Array.from(elemValues[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
           }
-          const elemSpcvals = elem.getElementsByTagName("Spcval");
+          const elemSpcvals = elem.getElementsByTagName("SpcVal");
           if (elemSpcvals.length > 0) {
-            elemVals = elemVals.concat(Array.from(elemSpcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+            elemVals = elemVals.concat(Array.from(elemSpcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
           }
-          const elemSngvals = elem.getElementsByTagName("Sngval");
+          const elemSngvals = elem.getElementsByTagName("SngVal");
           if (elemSngvals.length > 0) {
-            elemVals = elemVals.concat(Array.from(elemSngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+            elemVals = elemVals.concat(Array.from(elemSngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
           }
-          if (elemVals.length > 0 && elem.getAttribute("Rstd") !== "Y") {
+          let hasElemSngval = elemSngvals.length > 0;
+          let hasElemSpcval = elemSpcvals.length > 0;
+          let hasElemValues = elemValues.length > 0;
+          let hasElemRange = elem.getElementsByTagName("Range").length > 0;
+
+          if (elemVals.length > 0) {
             allowedValsMap[elemName] = elemVals.filter(Boolean);
+            if (
+              elem.getAttribute("Rstd") === "Y" ||
+              (
+                (hasElemValues || hasElemRange) &&
+                !hasElemSngval &&
+                !hasElemSpcval
+              )
+            ) {
+              allowedValsMap[elemName]._noCustomInput = true;
+            }
           }
         }
         // --- For each Qual ---
@@ -522,21 +565,37 @@
           const qualName = `${kwd}_QUAL${q}`;
           const qualValues = qual.getElementsByTagName("Values");
           if (qualValues.length > 0) {
-            qualVals = qualVals.concat(Array.from(qualValues[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+            qualVals = qualVals.concat(Array.from(qualValues[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
           }
-          const qualSpcvals = qual.getElementsByTagName("Spcval");
+          const qualSpcvals = qual.getElementsByTagName("SpcVal");
           if (qualSpcvals.length > 0) {
-            qualVals = qualVals.concat(Array.from(qualSpcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+            qualVals = qualVals.concat(Array.from(qualSpcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
           }
-          const qualSngvals = qual.getElementsByTagName("Sngval");
+          const qualSngvals = qual.getElementsByTagName("SngVal");
           if (qualSngvals.length > 0) {
-            qualVals = qualVals.concat(Array.from(qualSngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Value")));
+            qualVals = qualVals.concat(Array.from(qualSngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
           }
-          if (qualVals.length > 0 && qual.getAttribute("Rstd") !== "Y") {
+          let hasQualSngval = qualSngvals.length > 0;
+          let hasQualSpcval = qualSpcvals.length > 0;
+          let hasQualValues = qualValues.length > 0;
+          let hasQualRange = qual.getElementsByTagName("Range").length > 0;
+
+          if (qualVals.length > 0) {
             allowedValsMap[qualName] = qualVals.filter(Boolean);
+            if (
+              qual.getAttribute("Rstd") === "Y" ||
+              (
+                (hasQualValues || hasQualRange) &&
+                !hasQualSngval &&
+                !hasQualSpcval
+              )
+            ) {
+              allowedValsMap[qualName]._noCustomInput = true;
+            }
           }
         }
       });
+      console.log("[clPrompter] allowedValsMap:", allowedValsMap);
     }
     function handleSngvalLocking(container) {
       const sngvalSelects = container.querySelectorAll('select[data-has-sngval="true"]');
@@ -693,11 +752,22 @@
       div.dataset.kwd = kwd;
 
       // Label
-      const label = document.createElement("label");
-      label.className = "form-label";
-      label.textContent = prompt + (max > 1 ? ` [${idx + 1}]` : "");
-      label.htmlFor = instanceId;
-      div.appendChild(label);
+      // Only add Parm label for simple parameters (not ELEM or QUAL)
+      const isElem = (type === "ELEM" || parm.getElementsByTagName("Elem").length > 0);
+      const isQual = parm.getElementsByTagName("Qual").length > 0;
+      if (!isElem && !isQual) {
+        const label = document.createElement("label");
+        label.className = "form-label";
+        // Only append (Kwd) on the first instance
+        let labelText = prompt;
+        if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
+          labelText += ` (${kwd})`;
+        }
+        if (max > 1) labelText += ` [${idx + 1}]`;
+        label.textContent = labelText;
+        label.htmlFor = instanceId;
+        div.appendChild(label);
+      }
 
       // ELEM (list) parameter
       if (type === "ELEM" || parm.getElementsByTagName("Elem").length > 0) {
@@ -705,7 +775,11 @@
         const fieldset = document.createElement("fieldset");
         fieldset.className = "elem-group";
         const legend = document.createElement("legend");
-        legend.textContent = prompt;
+        let legendText = prompt;
+        if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
+          legendText += ` (${kwd})`;
+        }
+        legend.textContent = legendText;
         fieldset.appendChild(legend);
 
         for (let e = 0; e < elems.length; e++) {
@@ -713,7 +787,8 @@
           const elemPrompt = elem.getAttribute("Prompt") || elem.getAttribute("Name") || `Element ${e + 1}`;
           const elemType = elem.getAttribute("Type") || "CHAR";
           const elemLen = elem.getAttribute("Len") || "";
-          const elemName = `${kwd}_ELEM${e}_${idx}`;
+          const elemName = `${kwd}_ELEM${e}`;
+
           const elemDiv = document.createElement("div");
           elemDiv.className = "form-div";
           const elemLabel = document.createElement("label");
@@ -723,7 +798,8 @@
           elemDiv.appendChild(elemLabel);
           const allowedVals = allowedValsMap[elemName] || [];
           if (allowedVals.length > 0) {
-            const dropdown = createDropdownWithCustomInput(elemName, allowedVals);
+            const noCustomInput = allowedVals._noCustomInput === true;
+            const dropdown = createDropdownWithCustomInput(elemName, allowedVals, undefined, [], noCustomInput);
             elemDiv.appendChild(dropdown);
           } else {
             const elemInput = createInputForType(elemType, elemName, dft, elemLen);
@@ -737,18 +813,28 @@
         const quals = parm.getElementsByTagName("Qual");
         const fieldset = document.createElement("fieldset");
         fieldset.className = "qual-group";
+
         const legend = document.createElement("legend");
-        legend.textContent = prompt;
+        let legendText = prompt;
+        if (kwd && !prompt.includes(`(${kwd})`)) {
+          legendText += ` (${kwd})`;
+        }
+        legend.textContent = legendText;
         fieldset.appendChild(legend);
 
         for (let q = 0; q < quals.length; q++) {
           const qual = quals[q];
-          const qualPrompt = qual.getAttribute("Prompt") || qual.getAttribute("Name") || `Qualifier ${q + 1}`;
+          const qualPrompt_X = qual.getAttribute("Prompt") || qual.getAttribute("Name") || `Qualifier ${q + 1}`;
+          const qualPrompt = (q === 0)
+            ? prompt
+            : (qual.getAttribute("Prompt") || qual.getAttribute("Name") || `Qualifier ${q + 1}`);
+
           const qualType = qual.getAttribute("Type") || "CHAR";
           const qualLen = qual.getAttribute("Len") || "";
           const qualName = `${kwd}_QUAL${q}`;
           const qualDiv = document.createElement("div");
           qualDiv.className = "form-div";
+
           const qualLabel = document.createElement("label");
           qualLabel.className = "form-label";
           qualLabel.textContent = qualPrompt;
@@ -756,7 +842,8 @@
           qualDiv.appendChild(qualLabel);
           const allowedVals = allowedValsMap[qualName] || [];
           if (allowedVals.length > 0) {
-            const dropdown = createDropdownWithCustomInput(qualName, allowedVals);
+            const noCustomInput = allowedVals._noCustomInput === true;
+            const dropdown = createDropdownWithCustomInput(qualName, allowedVals, undefined, [], noCustomInput);
             qualDiv.appendChild(dropdown);
           } else {
             const qualInput = createInputForType(qualType, qualName, dft, qualLen);
@@ -770,7 +857,8 @@
       else {
         const allowedVals = allowedValsMap[kwd] || [];
         if (allowedVals.length > 0) {
-          const dropdown = createDropdownWithCustomInput(kwd, allowedVals);
+          const noCustomInput = allowedVals._noCustomInput === true;
+          const dropdown = createDropdownWithCustomInput(kwd, allowedVals, undefined, [], noCustomInput);
           div.appendChild(dropdown);
         } else {
           const input = createInputForType(type, kwd, dft, len);

@@ -1,7 +1,7 @@
 {
   "name": "clprompter",
   "description": "Bob Cozzi's IBM i CL Prompter",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "CozziResearch",
   "icon": "media/clPrompter.png",
   "extensionKind": [
