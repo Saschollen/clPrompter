@@ -18,12 +18,12 @@ import {
 
 import { getHtmlForPrompter, parseCLCmd } from './prompter';
 import { buildAPI2PartName } from './QlgPathName';
-import  { getCMDXML } from './getcmdxml';
+import { getCMDXML } from './getcmdxml';
 
 let baseExtension: Extension<CodeForIBMi> | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-
+vscode.window.showInformationMessage('CL Prompter activate! [start]');
     baseExtension = extensions.getExtension<CodeForIBMi>("halcyontechltd.code-for-ibmi");
     if (baseExtension) {
         if (!baseExtension.isActive) {
@@ -33,25 +33,19 @@ export async function activate(context: vscode.ExtensionContext) {
     } else {
         vscode.window.showErrorMessage("Code for IBM i extension is not installed or not found.");
     }
+    vscode.window.showInformationMessage('CL Prompter activating...');
     context.subscriptions.push(
-        vscode.commands.registerCommand('clprompter.clPrompter', async () => {
-            const config = vscode.workspace.getConfiguration('clprompter');
+        vscode.commands.registerCommand('clPrompter.clPrompter', async () => {
+            vscode.window.showInformationMessage('CL Prompter activated!');
+            const config = vscode.workspace.getConfiguration('clPrompter');
             if (!config.get('enableF4Key')) {
-                // Get the user's keybinding for this command
-                const keybindings = await vscode.commands.executeCommand<{ command: string, key: string }[]>("vscode.getKeybindings");
-                const myBinding = keybindings?.find(kb => kb.command === 'clprompter.clPrompter');
-                const keyLabel = myBinding?.key || 'F4';
-                vscode.window.showInformationMessage(`${keyLabel} key for CL Prompter is disabled in settings.`);
+                vscode.window.showInformationMessage('Fn key for CL Prompter is disabled in settings.');
                 return;
             }
-            vscode.commands.executeCommand('clprompter.show');
-        })
-    );
-    context.subscriptions.push(
-        vscode.commands.registerCommand('clprompter.show', async () => {
             await ClPromptPanel.createOrShow(context.extensionUri);
         })
     );
+    vscode.window.showInformationMessage('CL Prompter activate [end]');
 }
 
 
@@ -103,7 +97,7 @@ export class ClPromptPanel {
             await ClPromptPanel.currentPanel.setXML(cmdName, xml, editor, selection); // Use `await` to handle the asynchronous `setXML`
         } else {
             const panel = vscode.window.createWebviewPanel(
-                'clprompter',
+                'clPrompter',
                 'CL Prompt',
                 column,
                 {
@@ -195,7 +189,7 @@ export class ClPromptPanel {
                             allowedValsMap,
                             parmTypeMap,
                             this._parmMetas,
-                             this._presentParms,
+                            this._presentParms,
                             undefined
                         );
 

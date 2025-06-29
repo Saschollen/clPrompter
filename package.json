@@ -1,7 +1,8 @@
 {
   "name": "clprompter",
-  "description": "Bob Cozzi's IBM i CL Prompter",
-  "version": "0.0.5",
+  "displayName": "Bob Cozzi's IBM i CL Prompter",
+  "description": "Bob Cozzi's IBM i CL Prompter extension for vscode-for-ibmi",
+  "version": "0.0.8",
   "publisher": "CozziResearch",
   "icon": "media/clPrompter.png",
   "extensionKind": [
@@ -20,30 +21,26 @@
   "activationEvents": [
     "onLanguage:clle",
     "onLanguage:clp",
-    "onCommand:clprompter.show",
-    "onCommand:clprompter.clPrompter"
+    "onLanguage:cl",
+    "onCommand:clPrompter.clPrompter"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "clprompter.clPrompter",
+        "command": "clPrompter.clPrompter",
         "title": "CL Prompter"
-      },
-      {
-        "command": "clprompter.show",
-        "title": "Show CL Prompter"
       }
     ],
     "keybindings": [
       {
-        "command": "clprompter.clPrompter",
+        "command": "clPrompter.clPrompter",
         "key": "f4",
         "when": "editorTextFocus"
       }
     ],
     "configuration": {
       "properties": {
-        "clprompter.enableF4Key": {
+        "clPrompter.enableF4Key": {
           "type": "boolean",
           "default": true,
           "description": "Enable F4 key for CL Prompter"
@@ -53,7 +50,7 @@
     "menus": {
       "editor/context": [
         {
-          "command": "clprompter.clPrompter",
+          "command": "clPrompter.clPrompter",
           "when": "editorLangId == clle || editorLangId == clp || editorLangId == cmd || editorLangId == cl",
           "group": "navigation"
         }
