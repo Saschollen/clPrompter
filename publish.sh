@@ -10,7 +10,7 @@ fi
 npm run compile || exit 1
 
 # Optional: Package (useful for local installs)
-vsce package || exit 1
+npx vsce package || exit 1
 
 # Git commit/push
 git add .
