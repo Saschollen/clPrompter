@@ -2,7 +2,7 @@
   "name": "clprompter",
   "displayName": "Bob Cozzi's CL Prompter for IBM i",
   "description": "Bob Cozzi's IBM i CL Prompter extension for vscode-for-ibmi",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "CozziResearch",
   "icon": "media/clPrompter.png",
   "extensionKind": [
