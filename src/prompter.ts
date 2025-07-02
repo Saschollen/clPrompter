@@ -16,13 +16,48 @@ function logMessage(...args: any[]): void {
   }
 }
 
+// ✅ Add this helper function to extension.ts (around line 40, before the ClPromptPanel class)
+export function findCommandRange(lines: string[], currentLine: number): { startLine: number; endLine: number } {
+    let startLine = currentLine;
+    let endLine = currentLine;
+
+    // Find the start of the command (look backward for continuation)
+    while (startLine > 0) {
+        const prevLine = lines[startLine - 1].trimEnd();
+        if (prevLine.endsWith('+') || prevLine.endsWith('-')) {
+            startLine--;
+        } else {
+            break;
+        }
+    }
+
+    // Find the end of the command (look forward for continuation)
+    let lineIndex = startLine;
+    while (lineIndex < lines.length) {
+        const line = lines[lineIndex].trimEnd();
+        endLine = lineIndex;
+
+        if (line.endsWith('+') || line.endsWith('-')) {
+            lineIndex++;
+        } else {
+            break;
+        }
+    }
+
+    return { startLine, endLine };
+}
+
 export function getHtmlForPrompter(
   webview: vscode.Webview,
+  extensionUri: vscode.Uri,
   TwoPartCmdName: string,
   xml: string,
   nonce: string
 ): Promise<string> {
   const htmlPath = path.join(__dirname, '..', 'media', 'prompter.html');
+  const scriptUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'media', 'vscode-elements.js')
+  );
 
   return new Promise((resolve, reject) => {
     fs.readFile(htmlPath, { encoding: 'utf8' }, (err, html) => {
@@ -32,29 +67,30 @@ export function getHtmlForPrompter(
       }
 
       const qualCmdName = buildQualName(TwoPartCmdName);
+      console.log('[clPrompter} Webview URI for vscode-elements.js:', scriptUri.toString());
+    // Replace placeholders with escaped or safe values
+    const replacedHtml = html
+      .replace(/{{cspSource}}/g, webview.cspSource)
+      .replace(/{{nonce}}/g, nonce)
+      .replace(/{{vscodeElems}}/g, scriptUri.toString())
+      .replace(/{{cmdName}}/g, qualCmdName)
+      .replace(/{{xml}}/g, xml.replace(/"/g, '&quot;')); // Escape double quotes for safety
 
-      // Replace placeholders with escaped or safe values
-      const replacedHtml = html
-        .replace(/{{cspSource}}/g, webview.cspSource)
-        .replace(/{{nonce}}/g, nonce)
-        .replace(/{{cmdName}}/g, qualCmdName)
-        .replace(/{{xml}}/g, xml.replace(/"/g, '&quot;')); // Escape double quotes for safety
+    try {
+      const now = new Date();
+      const yy = String(now.getFullYear()).slice(-2);
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const dateStr = `${yy}${mm}${dd}`;
+      const debugPath = path.join(__dirname, `../../clPrompter-${dateStr}.html`);
+      fs.writeFileSync(debugPath, replacedHtml, { encoding: 'utf8' });
+    } catch (err) {
+      console.error('Continuing after Failed to write debug HTML file:', err);
+    }
 
-      try {
-        const now = new Date();
-        const yy = String(now.getFullYear()).slice(-2);
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const dateStr = `${yy}${mm}${dd}`;
-        const debugPath = path.join(__dirname, `../../clPrompter-${dateStr}.html`);
-        fs.writeFileSync(debugPath, replacedHtml, { encoding: 'utf8' });
-      } catch (err) {
-        console.error('Continuing after Failed to write debug HTML file:', err);
-      }
-
-      resolve(replacedHtml);
-    });
+    resolve(replacedHtml);
   });
+});
 }
 
 

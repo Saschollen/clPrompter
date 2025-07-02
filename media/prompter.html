@@ -13,6 +13,209 @@
       padding: 10px;
     }
 
+    /* ✅ Fix VS Code Elements text visibility */
+    vscode-textfield {
+      --vscode-input-foreground: var(--vscode-editor-foreground, #000000) !important;
+      --vscode-foreground: var(--vscode-editor-foreground, #000000) !important;
+      color: var(--vscode-editor-foreground, #000000) !important;
+    }
+
+    vscode-single-select {
+      --vscode-input-foreground: var(--vscode-editor-foreground, #000000) !important;
+      --vscode-foreground: var(--vscode-editor-foreground, #000000) !important;
+      color: var(--vscode-editor-foreground, #000000) !important;
+    }
+
+    /* ✅ Force text color in shadow DOM (if accessible) */
+    vscode-textfield::part(control),
+    vscode-single-select::part(control) {
+      color: var(--vscode-editor-foreground, #000000) !important;
+    }
+
+    /* ✅ Keep placeholder text light */
+    vscode-textfield::placeholder,
+    vscode-single-select::placeholder {
+      color: var(--vscode-input-placeholderForeground, #6c6c6c) !important;
+      opacity: 0.7;
+    }
+
+    /* ✅ Ensure input text is dark in both light and dark modes */
+    vscode-textfield input,
+    vscode-single-select input {
+      color: var(--vscode-editor-foreground, #000000) !important;
+    }
+
+    /* ✅ Enhanced tooltip styles with higher z-index */
+    .range-tooltip {
+      position: fixed;
+      background: #1976d2;
+      color: #ffffff;
+      border: 1px solid #1565c0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 15000;
+      /* ✅ Higher than dropdown z-index (1000) */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-width: 320px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      transform: translateY(-4px);
+    }
+
+    .range-tooltip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ✅ Arrow pointing up (default) */
+    .range-tooltip::before {
+      content: '';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 6px solid #1565c0;
+    }
+
+    .range-tooltip::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-bottom: 5px solid #1976d2;
+    }
+
+    /* ✅ Arrow pointing down (when tooltip appears above input) */
+    .range-tooltip.tooltip-above::before {
+      top: auto;
+      bottom: -6px;
+      border-bottom: none;
+      border-top: 6px solid #1565c0;
+    }
+
+    .range-tooltip.tooltip-above::after {
+      top: auto;
+      bottom: -5px;
+      border-bottom: none;
+      border-top: 5px solid #1976d2;
+    }
+
+    /* ✅ Enhanced range input states */
+    [data-range-from][data-range-to] {
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    [data-range-from][data-range-to]:hover {
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+    }
+
+    [data-range-from][data-range-to]:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.4);
+    }
+
+    [data-range-from][data-range-to].invalid {
+      border-color: #d32f2f !important;
+      background-color: #ffebee !important;
+      box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.3) !important;
+    }
+
+    .input-xs {
+      width: 80px;
+      min-width: 80px;
+    }
+
+    /* 1-6 chars (small numbers) */
+    .input-sm {
+      width: 120px;
+      min-width: 120px;
+    }
+
+    /* 7-12 chars (medium numbers/names) */
+    .input-md {
+      width: 200px;
+      min-width: 200px;
+    }
+
+    /* 13-25 chars (longer names) */
+    .input-lg {
+      width: 300px;
+      min-width: 300px;
+    }
+
+    /* 26-50 chars (short descriptions) */
+    .input-xl {
+      width: 400px;
+      min-width: 400px;
+    }
+
+    /* 51-80 chars (medium text) */
+    .input-full {
+      width: 100%;
+      min-width: 100%;
+    }
+
+    /* 81+ chars (long text/commands) */
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      10%,
+      30%,
+      50%,
+      70%,
+      90% {
+        transform: translateX(-2px);
+      }
+
+      20%,
+      40%,
+      60%,
+      80% {
+        transform: translateX(2px);
+      }
+    }
+
+    /* ✅ Enhanced styling for range validation */
+    [data-range-from][data-range-to] {
+      transition: all 0.3s ease;
+    }
+
+    [data-range-from][data-range-to]:invalid {
+      border-color: #ff0000 !important;
+      background-color: #ffebee !important;
+    }
+
+    .main-container {
+      margin-bottom: 1em;
+    }
+
+    .label-input {
+      width: 12ch;
+    }
+
+    .main-title {
+      margin-top: 0;
+      margin-bottom: 0.5em;
+    }
+
     .parm-multi-group {
       border: 1px dashed #bbb;
       margin-bottom: 1em;
@@ -107,49 +310,197 @@
 </head>
 
 <body>
-  <h2 id="mainTitle" style="margin-top:0; margin-bottom:0.5em;"></h2>
-  <div style="margin-bottom: 1em;">
 
+  <script type="module" src="{{vscodeElems}}" nonce="{{nonce}}"></script>
+
+
+  <h2 id="mainTitle" class="main-title"></h2>
+  <div class="main-container">
     <label for="clLabel" class="form-label">Label (optional):</label>
-    <input type="text" id="clLabel" maxlength="10" style="width: 12ch;" />
+    <input type="text" id="clLabel" maxlength="10" class="label-input" />
   </div>
+
   <form id="clForm"></form>
   <button id="cancelBtn">Cancel</button>
   <button id="submitBtn">Enter</button>
 
   <script nonce="{{nonce}}">
+    const TOOLTIP_SETTINGS = {
+      focusDuration: 3000, // Default 3 seconds for focus tooltips
+      errorDuration: 6000, // 6 seconds for error tooltips
+      hoverDuration: 2000, // 2 seconds for hover tooltips
+      highZIndex: 15000 // High z-index to stay above dropdowns
+    };
+
     let xmlDoc;
     let caseMode = "MONO";
     let parms = [];
     let allowedValsMap = {};
     let cmdName = "{{cmdName}}";
     let originalParamMap = {};
-    const vscode = acquireVsCodeApi();
+    let vscode;
+    let isTestMode = false;
+
+    try {
+      vscode = acquireVsCodeApi();
+    } catch (e) {
+      console.log('[clPrompter] Running in browser test mode (not VS Code)');
+      isTestMode = true;
+
+      // Mock VS Code API for testing
+      vscode = {
+        postMessage: (msg) => console.log('[MOCK] VS Code message:', msg),
+        setState: (state) => console.log("[MOCK] Set state:", state),
+        getState: () => ({ "[MOCK]": "No state in browser" })
+      };
+
+      // ✅ Mock VS Code Elements for Firefox testing
+      if (typeof customElements === 'undefined') {
+        window.customElements = {
+          get: () => null,
+          define: () => { },
+          keys: function () { return []; }
+        };
+      }
+    }
 
     console.log("[clPrompter] webview JS loaded");
+    // ✅ Update your existing message handler around line 370
     window.addEventListener("message", event => {
       const message = event.data;
-      if (message.type === "populateForm") {
-        originalParamMap = message.paramMap || {};
-        populateFormFromValues(message.paramMap);
-      }
-    });
+      console.log("[clPrompter] Received message:", message.type);
 
-    window.addEventListener("message", event => {
-      const message = event.data;
-      if (message.type === "formXml") {
+      // ✅ Handle reset message FIRST
+      if (message.type === "reset") {
+        console.log("[clPrompter] Processing reset message");
+        resetPrompterState();
+        return;
+      }
+
+      // ✅ Handle new formData message with pre-processed allowedValsMap
+      if (message.type === "formData") {
+        console.log("[clPrompter] Processing formData message");
         const parser = new DOMParser();
         xmlDoc = parser.parseFromString(message.xml, "text/xml");
-        parms = Array.from(xmlDoc.getElementsByTagName("Parm"));
+
+        // ✅ Use pre-processed allowedValsMap from TypeScript
+        allowedValsMap = message.allowedValsMap || {};
+        cmdName = message.cmdName || cmdName;
+
+        console.log(`[clPrompter] Updated cmdName to: ${cmdName}`);
+        console.log(`[clPrompter] Pre-processed allowedValsMap keys:`, Object.keys(allowedValsMap));
+
+        // Sort parameters
+        const allParms = Array.from(xmlDoc.getElementsByTagName("Parm"));
+        parms = allParms.sort((a, b) => {
+          const aPosNbr = a.getAttribute("PosNbr");
+          const bPosNbr = b.getAttribute("PosNbr");
+          const aPos = aPosNbr ? parseInt(aPosNbr, 10) : 0;
+          const bPos = bPosNbr ? parseInt(bPosNbr, 10) : 0;
+
+          if (aPos === bPos) {
+            const aIndex = allParms.indexOf(a);
+            const bIndex = allParms.indexOf(b);
+            return aIndex - bIndex;
+          }
+          return aPos - bPos;
+        });
+
+        console.log("[clPrompter] Found", parms.length, "parameters");
+
         setMainTitle();
-        buildAllowedValsMap();
-        loadForm();
+        loadForm(); // ✅ buildAllowedValsMap() call removed - already done in TypeScript
+        console.log("[clPrompter] loadForm completed");
+        // Add this right after the form loads in prompter.html
+        setTimeout(() => {
+          console.log("[clPrompter] DEBUG: All TOPGMQ inputs created:");
+          const topgmqInputs = document.querySelectorAll('[name*="TOPGMQ"]');
+          topgmqInputs.forEach(input => {
+            console.log(`  ${input.tagName}[name="${input.name}"][id="${input.id}"]`);
+          });
+        }, 1000);
       }
+
+      // ✅ Handle new populateForm message with instructions
       if (message.type === "populateForm") {
-        populateFormFromValues(message.paramMap);
+        try {
+          console.log("[clPrompter] Processing populateForm with instructions");
+          console.log('[prompter] Received population instructions:', message.instructions);
+          console.log('[prompter] Instructions keys:', Object.keys(message.instructions || {}));
+
+          // Check if instructions contain expected parameters
+          if (message.instructions?.MSGID) {
+            console.log('[prompter] MSGID instruction:', message.instructions.MSGID);
+          }
+          // Execute population instructions
+          executePopulationInstructions(message.instructions);
+        } catch (error) {
+          console.error("[clPrompter] Error in populateForm handler:", error);
+        }
+      }
+
+      // ✅ Existing handlers...
+      if (message.type === "setLabel") {
+        console.log("[clPrompter] Setting label:", message.label);
+        setLabel(message.label);
+      }
+
+      // ✅ LEGACY: Handle old formXml for backward compatibility (remove this later)
+      if (message.type === "formXml") {
+        console.warn("[clPrompter] Received legacy formXml message - this should be migrated to formData");
+        const parser = new DOMParser();
+        xmlDoc = parser.parseFromString(message.xml, "text/xml");
+
+        // ... existing formXml logic as fallback ...
+        buildAllowedValsMap(); // ✅ Keep for now as fallback
+        setMainTitle();
+        loadForm();
+        // Add this right after the form loads in prompter.html
+        setTimeout(() => {
+          console.log("[clPrompter] DEBUG: All TOPGMQ inputs created:");
+          const topgmqInputs = document.querySelectorAll('[name*="TOPGMQ"]');
+          topgmqInputs.forEach(input => {
+            console.log(`  ${input.tagName}[name="${input.name}"][id="${input.id}"]`);
+          });
+        }, 1000);
       }
     });
 
+    // ✅ Add this function around line 350 (after global variables)
+    function resetPrompterState() {
+      console.log("[clPrompter] Resetting prompter state for new command");
+
+      // Clear global state
+      xmlDoc = null;
+      parms = [];
+      allowedValsMap = {};
+      originalParamMap = {};
+
+      // Clear the form
+      const form = document.getElementById("clForm");
+      if (form) {
+        form.innerHTML = "";
+      }
+
+      // Clear the main title
+      const mainTitle = document.getElementById("mainTitle");
+      if (mainTitle) {
+        mainTitle.textContent = "";
+      }
+
+      // Clear the label input
+      const labelInput = document.getElementById("clLabel");
+      if (labelInput) {
+        labelInput.value = "";
+      }
+
+      // Hide any tooltips
+      if (typeof hideRangeTooltip === 'function') {
+        hideRangeTooltip();
+      }
+
+      console.log("[clPrompter] Prompter state reset completed");
+    }
     function applyCase(val) {
       if (caseMode === "MONO") {
         const trimmed = val.trim();
@@ -238,6 +589,646 @@
       return result;
     }
 
+    // ✅ Add this function around line 600 (after utility functions)
+    function executePopulationInstructions(instructions) {
+      console.log(`[clPrompter] Executing ${instructions.length} population instructions`);
+
+      instructions.forEach((instruction, index) => {
+        console.log(`[clPrompter] Instruction ${index}:`, instruction);
+
+        // Find target element
+        let target;
+        if (instruction.target.startsWith('.') || instruction.target.startsWith('#')) {
+          // CSS selector
+          target = document.querySelector(instruction.target);
+        } else {
+          // Element name
+          target = document.querySelector(`[name="${instruction.target}"]`) ||
+            document.querySelector(`vscode-single-select[name="${instruction.target}"]`) ||
+            document.querySelector(`vscode-textfield[name="${instruction.target}"]`) ||
+            document.querySelector(`#${instruction.target}`);
+        }
+
+        if (!target) {
+          console.log(`[clPrompter] Target not found for instruction ${index}: ${instruction.target}`);
+
+          // ✅ Debug: List available targets
+          const availableInputs = document.querySelectorAll('input, select, vscode-single-select, vscode-textfield');
+          const namesList = Array.from(availableInputs)
+            .map(inp => `${inp.tagName}[name="${inp.name}"][id="${inp.id}"]`)
+            .slice(0, 10); // Show first 10
+
+          console.log(`[clPrompter] Available targets (first 10):`, namesList);
+          return;
+        }
+
+        // Execute instruction based on type
+        switch (instruction.type) {
+          case 'simple':
+          case 'elem':
+          case 'qual':
+            setElementValue(target, instruction.value, instruction.options);
+            break;
+
+          case 'multi-instance':
+            if (instruction.value === 'click') {
+              console.log(`[clPrompter] Clicking: ${instruction.target}`);
+              target.click();
+
+              // Wait for DOM update after adding instance
+              setTimeout(() => {
+                console.log(`[clPrompter] Instance added, continuing with next instructions`);
+              }, 50);
+            }
+            break;
+
+          default:
+            console.warn(`[clPrompter] Unknown instruction type: ${instruction.type}`);
+        }
+      });
+
+      console.log('[clPrompter] Population instructions completed');
+    }
+
+    // ✅ Helper function to set element values consistently
+    function setElementValue(element, value, options = {}) {
+      console.log(`[clPrompter] Setting value "${value}" on ${element.tagName}[name="${element.name}"]`);
+
+      if (element.tagName.toLowerCase() === 'vscode-single-select') {
+        // Handle VS Code select
+        const currentValue = element.value;
+        element.value = value;
+
+        // ✅ Enhanced VS Code Elements handling
+        if (options.forceValue && element.value !== value) {
+          console.log(`[clPrompter] Force-setting VS Code select value`);
+
+          // Try creating option if it doesn't exist
+          const existingOption = element.querySelector(`vscode-option[value="${value}"]`);
+          if (!existingOption && value) {
+            const newOption = document.createElement("vscode-option");
+            newOption.value = value;
+            newOption.textContent = value;
+            newOption.selected = true;
+            element.appendChild(newOption);
+          }
+
+          element.value = value;
+
+          // ✅ Try shadow DOM access for combobox
+          if (options.shadowDOMAccess && element.shadowRoot) {
+            setTimeout(() => {
+              const comboboxInput = element.shadowRoot.querySelector('.combobox-input, input, .input');
+              if (comboboxInput) {
+                comboboxInput.value = value;
+                console.log(`[clPrompter] Set shadow DOM input: "${value}"`);
+              }
+            }, 10);
+          }
+        }
+
+        if (options.dispatchEvents) {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        console.log(`[clPrompter] VS Code select value set: "${element.value}" (was: "${currentValue}")`);
+
+      } else if (element.tagName.toLowerCase() === 'vscode-textfield') {
+        // Handle VS Code textfield
+        element.value = value;
+
+        if (options.dispatchEvents) {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        console.log(`[clPrompter] VS Code textfield value set: "${value}"`);
+
+      } else if (element.tagName === 'SELECT' && element.dataset.customInputId) {
+        // Handle HTML select with custom input
+        const customInput = document.getElementById(element.dataset.customInputId);
+
+        // Try to find value in select options first
+        let foundOption = false;
+        for (let option of element.options) {
+          if (option.value === value) {
+            element.value = value;
+            if (customInput) customInput.value = "";
+            foundOption = true;
+            console.log(`[clPrompter] HTML select option set: "${value}"`);
+            break;
+          }
+        }
+
+        // If not found in options, set custom input
+        if (!foundOption && customInput && value) {
+          element.selectedIndex = -1;
+          customInput.value = value;
+          console.log(`[clPrompter] HTML custom input set: "${value}"`);
+        }
+
+      } else {
+        // Handle regular input
+        element.value = value;
+
+        if (options.dispatchEvents) {
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        console.log(`[clPrompter] Regular input value set: "${value}"`);
+      }
+    }
+
+    function createParameterInput(name, allowedVals, noCustomInput = false, defaultValue = "") {
+      if (allowedVals && allowedVals.length > 0) {
+        // ✅ Check for range metadata
+        const rangeMetadata = allowedVals.find(v => v.startsWith('_RANGE_'));
+        const hasRange = !!rangeMetadata;
+
+        const parm = Array.from(parms).find(p => p.getAttribute("Kwd") === name);
+        const effectiveLen = parm ? calculateFieldWidth(parm, allowedVals) : 25;
+        const widthClass = getLengthClass(effectiveLen);
+
+        // ✅ HYBRID APPROACH: Use dropdown for restricted, textfield with custom dropdown for flexible
+        if (noCustomInput && customElements.get('vscode-single-select')) {
+          // ✅ Restricted parameters - Pure dropdown (no combobox attribute)
+          const select = document.createElement('vscode-single-select');
+          select.name = name;
+          select.id = name;
+          select.className = widthClass;
+
+          if (defaultValue) {
+            select.setAttribute('data-default', defaultValue);
+            select.value = defaultValue;
+          }
+
+          // Add empty option first
+          const emptyOption = document.createElement('vscode-option');
+          emptyOption.value = "";
+          emptyOption.textContent = "";
+          select.appendChild(emptyOption);
+
+          // Add options (filter out range metadata)
+          allowedVals.forEach(val => {
+            if (val && val !== '_noCustomInput' && !val.startsWith('_RANGE_')) {
+              const option = document.createElement('vscode-option');
+              option.value = val;
+              option.textContent = val;
+              if (val === defaultValue) {
+                option.selected = true;
+              }
+              select.appendChild(option);
+            }
+          });
+
+          console.log(`[clPrompter] Created restricted vscode-single-select dropdown for ${name}`);
+          return select;
+
+        } else if (customElements.get('vscode-textfield')) {
+          // ✅ Flexible parameters - Custom textfield with dropdown list
+          const container = document.createElement('div');
+          container.style.position = 'relative';
+          container.style.display = 'inline-block';
+          container.style.width = '100%';
+
+          const textfield = document.createElement('vscode-textfield');
+          textfield.name = name;
+          textfield.id = name;
+          textfield.style.width = '100%';
+
+
+          if (defaultValue) {
+            textfield.setAttribute('data-default', defaultValue);
+            textfield.value = defaultValue;
+          }
+
+          // ✅ Add range validation attributes if range exists
+          if (hasRange) {
+            const rangeParts = rangeMetadata.split('_');
+            if (rangeParts.length >= 4) {
+              const fromValue = rangeParts[2];
+              const toValue = rangeParts[3];
+
+              // ✅ Set data attributes for your custom validation
+              textfield.setAttribute('data-range-from', fromValue);
+              textfield.setAttribute('data-range-to', toValue);
+
+              // ✅ Also set HTML5 min/max to match (for native validation)
+              textfield.setAttribute('min', fromValue);
+              textfield.setAttribute('max', toValue);
+
+              console.log(`[clPrompter] Set both custom and HTML5 range: ${fromValue}-${toValue}`);
+            }
+          }
+
+          // ✅ Create custom dropdown list
+          const suggestionsList = document.createElement('ul');
+          suggestionsList.className = 'dropdown-list';
+          suggestionsList.id = `${name}_suggestions`;
+          suggestionsList.style.cssText = `
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--vscode-dropdown-background);
+        border: 1px solid var(--vscode-dropdown-border);
+        border-radius: 3px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: none;
+      `;
+
+          // Add suggestion items
+          const suggestionOptions = allowedVals.filter(v => v && v !== '_noCustomInput' && !v.startsWith('_RANGE_'));
+          suggestionOptions.forEach(val => {
+            const listItem = document.createElement('li');
+            listItem.textContent = val;
+            listItem.style.cssText = `
+          padding: 6px 12px;
+          cursor: pointer;
+          border-bottom: 1px solid var(--vscode-dropdown-border);
+          color: var(--vscode-dropdown-foreground);
+        `;
+
+            // Hover effects
+            listItem.addEventListener('mouseenter', () => {
+              listItem.style.backgroundColor = 'var(--vscode-list-hoverBackground)';
+            });
+            listItem.addEventListener('mouseleave', () => {
+              listItem.style.backgroundColor = '';
+            });
+
+            // Click to select
+            listItem.addEventListener('click', () => {
+              textfield.value = val;
+              suggestionsList.style.display = 'none';
+              textfield.dispatchEvent(new Event('input'));
+              textfield.dispatchEvent(new Event('change'));
+              textfield.focus();
+            });
+
+            suggestionsList.appendChild(listItem);
+          });
+
+
+
+          // ✅ Filter suggestions as user types + range validation
+          textfield.addEventListener('input', (e) => {
+            const inputValue = e.target.value.toLowerCase();
+            const listItems = suggestionsList.querySelectorAll('li');
+
+            let hasVisibleItems = false;
+            listItems.forEach(item => {
+              const text = item.textContent.toLowerCase();
+              if (text.includes(inputValue) || inputValue === '') {
+                item.style.display = 'block';
+                hasVisibleItems = true;
+              } else {
+                item.style.display = 'none';
+              }
+            });
+
+            // Show/hide dropdown based on matching items
+            suggestionsList.style.display = hasVisibleItems ? 'block' : 'none';
+
+            // ✅ Range validation with tooltip - MOVED HERE FROM WRONG LOCATION
+            if (hasRange) {
+              validateRangeInput(e.target);
+            }
+          });
+
+          // ✅ Enhanced change event for range validation
+          textfield.addEventListener('change', function (e) {
+            if (hasRange) {
+              validateRangeInput(e.target);
+            }
+          });
+
+          // ✅ Enhanced event listeners - REMOVED SUCCESS TOOLTIPS
+          textfield.addEventListener('focus', () => {
+            if (suggestionOptions.length > 0) {
+              suggestionsList.style.display = 'block';
+            }
+
+            // ✅ Clear any existing tooltip first, then show focus tooltip
+            hideRangeTooltip();
+            if (hasRange) {
+              const fromValue = textfield.getAttribute('data-range-from');
+              const toValue = textfield.getAttribute('data-range-to');
+              // ✅ Use configurable duration
+              showRangeTooltip(textfield, `💡 Enter a number between ${fromValue} and ${toValue}`, 'info');
+            }
+          });
+
+          textfield.addEventListener('blur', (e) => {
+            // Delay hiding to allow clicking on suggestions
+            setTimeout(() => {
+              suggestionsList.style.display = 'none';
+
+              // ✅ Just hide tooltip on blur - no success tooltip
+              if (!textfield.matches(':hover')) {
+                hideRangeTooltip();
+              }
+            }, 150);
+          });
+
+
+          // ✅ Keyboard navigation
+          textfield.addEventListener('keydown', (e) => {
+            const visibleItems = Array.from(suggestionsList.querySelectorAll('li')).filter(li => li.style.display !== 'none');
+            const currentSelected = suggestionsList.querySelector('li.selected');
+            let selectedIndex = currentSelected ? visibleItems.indexOf(currentSelected) : -1;
+
+            if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              suggestionsList.style.display = 'block';
+              selectedIndex = Math.min(selectedIndex + 1, visibleItems.length - 1);
+              updateSelection(visibleItems, selectedIndex);
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              selectedIndex = Math.max(selectedIndex - 1, 0);
+              updateSelection(visibleItems, selectedIndex);
+            } else if (e.key === 'Enter') {
+              if (currentSelected) {
+                e.preventDefault();
+                currentSelected.click();
+              }
+            } else if (e.key === 'Escape') {
+              suggestionsList.style.display = 'none';
+              hideRangeTooltip();
+            }
+          });
+
+          function updateSelection(items, index) {
+            items.forEach((item, i) => {
+              if (i === index) {
+                item.classList.add('selected');
+                item.style.backgroundColor = 'var(--vscode-list-activeSelectionBackground)';
+                item.style.color = 'var(--vscode-list-activeSelectionForeground)';
+              } else {
+                item.classList.remove('selected');
+                item.style.backgroundColor = '';
+                item.style.color = 'var(--vscode-dropdown-foreground)';
+              }
+            });
+          }
+
+          // ✅ Add enhanced placeholder hint
+          if (!hasRange) {
+            const optionsPreview = suggestionOptions.slice(0, 3).join(', ');
+            textfield.placeholder = `e.g., ${optionsPreview}${suggestionOptions.length > 3 ? '...' : ''}`;
+          }
+
+          // ✅ Add hover support for range inputs - MOVED TO CORRECT LOCATION
+          if (hasRange) {
+            addRangeHoverSupport(textfield);
+          }
+
+          container.appendChild(textfield);
+          container.appendChild(suggestionsList);
+
+          console.log(`[clPrompter] Created vscode-textfield with custom dropdown (${suggestionOptions.length} options) for ${name}`);
+          return container;
+        }
+      }
+
+      // ✅ For parameters without predefined values, use plain vscode-textfield
+      if (customElements.get('vscode-textfield')) {
+        const textfield = document.createElement('vscode-textfield');
+        textfield.name = name;
+        textfield.id = name;
+
+        if (defaultValue) {
+          textfield.setAttribute('data-default', defaultValue);
+          textfield.value = defaultValue;
+        }
+
+        console.log(`[clPrompter] Created plain vscode-textfield for ${name}`);
+        return textfield;
+      }
+
+      // Final fallback to regular HTML input
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.name = name;
+      input.id = name;
+
+      if (defaultValue) {
+        input.setAttribute('data-default', defaultValue);
+        input.value = defaultValue;
+      }
+
+      return input;
+    }
+
+
+
+    // ✅ Enhanced hover support function - REMOVED SUCCESS TOOLTIPS
+    function addRangeHoverSupport(input) {
+      const fromValue = input.getAttribute('data-range-from');
+      const toValue = input.getAttribute('data-range-to');
+
+      if (!fromValue || !toValue) return;
+
+      // ✅ Remove native title attribute to prevent dual tooltips
+      input.removeAttribute('title');
+
+      // ✅ Show hint on hover (when not focused and no tooltip exists)
+      input.addEventListener('mouseenter', () => {
+        // ✅ Only show hover tooltip if field is NOT focused
+        if (document.activeElement !== input && !currentTooltip) {
+          const value = input.value.trim();
+          let message, type;
+
+          if (!value) {
+            message = `💡 Range: ${fromValue} to ${toValue}. Click to enter a value.`;
+            type = 'hint';
+          } else if (value.startsWith('*')) {
+            message = `💡 Special value: "${value}". Range: ${fromValue}-${toValue}`;
+            type = 'hint';
+          } else {
+            const numValue = parseInt(value, 10);
+            const fromNum = parseInt(fromValue, 10);
+            const toNum = parseInt(toValue, 10);
+
+            if (!isNaN(numValue) && !isNaN(fromNum) && !isNaN(toNum)) {
+              if (numValue >= fromNum && numValue <= toNum) {
+                message = `✅ "${value}" is valid (range: ${fromValue}-${toValue})`;
+                type = 'hint'; // ✅ Changed from 'success' to 'hint'
+              } else {
+                message = `❌ "${value}" is invalid (range: ${fromValue}-${toValue})`;
+                type = 'error';
+              }
+            } else {
+              message = `❓ "${value}" - Expected number in range ${fromValue}-${toValue}`;
+              type = 'hint';
+            }
+          }
+
+          // ✅ Use configurable hover duration
+          showRangeTooltip(input, message, type, TOOLTIP_SETTINGS.hoverDuration);
+        }
+      });
+
+      // ✅ Hide on mouse leave (unless focused)
+      input.addEventListener('mouseleave', () => {
+        if (document.activeElement !== input) {
+          setTimeout(() => {
+            if (document.activeElement !== input && currentTooltip) {
+              hideRangeTooltip();
+            }
+          }, 100);
+        }
+      });
+
+      // ✅ Clear tooltip immediately when user starts typing
+      input.addEventListener('input', () => {
+        hideRangeTooltip();
+      });
+
+      // ✅ Clear tooltip when focus leaves the input
+      input.addEventListener('blur', () => {
+        setTimeout(() => {
+          if (document.activeElement !== input && !input.matches(':hover')) {
+            hideRangeTooltip();
+          }
+        }, 150);
+      });
+    }
+
+    // ✅ New function for showing success tooltip only on specific events
+    function showSuccessTooltipIfValid(input) {
+      const fromValue = input.getAttribute('data-range-from');
+      const toValue = input.getAttribute('data-range-to');
+
+      if (!fromValue || !toValue) return;
+
+      const value = input.value.trim();
+
+      if (value && !value.startsWith('*')) {
+        const numValue = parseInt(value, 10);
+        const fromNum = parseInt(fromValue, 10);
+        const toNum = parseInt(toValue, 10);
+
+        if (!isNaN(numValue) && !isNaN(fromNum) && !isNaN(toNum)) {
+          if (numValue >= fromNum && numValue <= toNum) {
+            showRangeTooltip(input, `✅ Valid: ${value} (range: ${fromValue}-${toValue})`, 'success', 1500);
+          }
+        }
+      }
+    }
+
+    // ✅ Enhanced tooltip management functions
+    let currentTooltip = null;
+    let hideTimeout = null;
+
+    function showRangeTooltip(input, message, type = 'info', duration = null) {
+      // Clear any existing hide timeout
+      if (hideTimeout) {
+        clearTimeout(hideTimeout);
+        hideTimeout = null;
+      }
+
+      // Remove existing tooltip
+      hideRangeTooltip();
+
+      // Create tooltip
+      const tooltip = document.createElement('div');
+      tooltip.className = 'range-tooltip';
+      tooltip.textContent = message;
+
+      // ✅ Enhanced type-specific styling with higher z-index
+      if (type === 'error') {
+        tooltip.style.background = '#d32f2f';
+        tooltip.style.borderColor = '#b71c1c';
+        tooltip.style.color = '#ffffff';
+        tooltip.style.fontWeight = 'bold';
+        tooltip.style.zIndex = TOOLTIP_SETTINGS.highZIndex;
+      } else if (type === 'info') {
+        tooltip.style.background = '#1976d2';
+        tooltip.style.borderColor = '#1565c0';
+        tooltip.style.color = '#ffffff';
+        tooltip.style.zIndex = TOOLTIP_SETTINGS.highZIndex; // ✅ Higher than dropdown
+      } else if (type === 'hint') {
+        tooltip.style.background = '#616161';
+        tooltip.style.borderColor = '#424242';
+        tooltip.style.color = '#ffffff';
+        tooltip.style.zIndex = TOOLTIP_SETTINGS.highZIndex;
+      }
+
+      document.body.appendChild(tooltip);
+
+      // Position tooltip
+      const rect = input.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+
+      // ✅ Better positioning logic
+      let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+      let top = rect.bottom + 8;
+
+      // Keep tooltip within viewport
+      const margin = 10;
+      if (left < margin) left = margin;
+      if (left + tooltipRect.width > window.innerWidth - margin) {
+        left = window.innerWidth - tooltipRect.width - margin;
+      }
+
+      // If tooltip would go below viewport, show above input
+      if (top + tooltipRect.height > window.innerHeight - margin) {
+        top = rect.top - tooltipRect.height - 8;
+
+        // Flip arrow direction
+        tooltip.classList.add('tooltip-above');
+      }
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+
+      // Show tooltip with animation
+      setTimeout(() => {
+        tooltip.classList.add('show');
+      }, 10);
+
+      currentTooltip = tooltip;
+
+      // ✅ Use configurable duration
+      const hideDelay = duration || (
+        type === 'error' ? TOOLTIP_SETTINGS.errorDuration :
+          type === 'info' ? TOOLTIP_SETTINGS.focusDuration :
+            TOOLTIP_SETTINGS.hoverDuration
+      );
+
+      hideTimeout = setTimeout(() => {
+        hideRangeTooltip();
+      }, hideDelay);
+    }
+
+    function hideRangeTooltip() {
+      if (hideTimeout) {
+        clearTimeout(hideTimeout);
+        hideTimeout = null;
+      }
+
+      if (currentTooltip) {
+        currentTooltip.classList.remove('show');
+        setTimeout(() => {
+          if (currentTooltip && currentTooltip.parentNode) {
+            currentTooltip.parentNode.removeChild(currentTooltip);
+          }
+          currentTooltip = null;
+        }, 200);
+      }
+    }
+
+
+
     function createDropdownWithCustomInput(name, dropdownVals, placeholder = "Or enter custom value", sngvalList = [], noCustomInput = false) {
       const container = document.createElement("span");
       const select = document.createElement("select");
@@ -325,7 +1316,16 @@
     }
 
     function populateElemInputs(parm, kwd, vals, instanceIdx = 0, container = document) {
+      console.log(`[clPrompter] ===== populateElemInputs START =====`);
+      console.log(`[clPrompter] populateElemInputs: ${kwd}, vals:`, vals, `instanceIdx: ${instanceIdx}`);
+
       const elems = parm ? parm.getElementsByTagName("Elem") : [];
+      console.log(`[clPrompter] ${kwd} - Found ${elems.length} elements`);
+
+      // ✅ Determine if this is a multi-instance parameter
+      const isMultiInstance = container !== document && container.closest('.parm-multi-group');
+      console.log(`[clPrompter] ${kwd} - isMultiInstance: ${isMultiInstance}`);
+
       let splitVals;
       if (Array.isArray(vals)) {
         splitVals = vals;
@@ -338,34 +1338,142 @@
       } else {
         splitVals = [];
       }
+
+      console.log(`[clPrompter] ${kwd} - Split values:`, splitVals);
+
       for (let e = 0; e < elems.length; e++) {
-        const elemName = `${kwd}_ELEM${e}_${instanceIdx}`;
+        const elem = elems[e];
+        const elemType = elem.getAttribute("Type") || "CHAR";
+
+        // ✅ Use correct naming pattern based on instance type
+        const elemName = isMultiInstance ? `${kwd}_ELEM${e}_${instanceIdx}` : `${kwd}_ELEM${e}`;
         const value = splitVals[e] !== undefined ? splitVals[e] : "";
-        const select = container.querySelector(`select[name="${elemName}"]`);
-        const customInput = container.querySelector(`#${elemName}_custom`);
-        if (select && customInput) {
-          let foundIdx = -1;
-          for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value.trim().toUpperCase() === value.trim().toUpperCase()) {
-              foundIdx = i;
-              break;
+
+        console.log(`[clPrompter] ${kwd} - Processing element ${e}:`);
+        console.log(`[clPrompter]   - elemName: ${elemName}`);
+        console.log(`[clPrompter]   - elemType: ${elemType}`);
+        console.log(`[clPrompter]   - value: "${value}"`);
+
+        // ✅ Handle nested ELEM (ELEM within ELEM) - like TOPGMQ's "Call stack entry identifier"
+        if (elemType === "ELEM") {
+          console.log(`[clPrompter] ${kwd} - Found nested ELEM: ${elemName}`);
+
+          // ✅ Parse the nested value - strip parentheses and split on spaces
+          let subValues = [];
+          if (typeof value === 'string' && value.trim() !== '') {
+            let cleanValue = value.trim();
+
+            // ✅ Remove surrounding parentheses if present
+            if (cleanValue.startsWith('(') && cleanValue.endsWith(')')) {
+              cleanValue = cleanValue.slice(1, -1); // Remove first and last character
+              console.log(`[clPrompter] ${kwd} - Stripped parentheses: "${value}" -> "${cleanValue}"`);
+            }
+
+            subValues = cleanValue.split(' ').filter(v => v.trim() !== '');
+          } else if (Array.isArray(value)) {
+            subValues = value;
+          }
+
+          console.log(`[clPrompter] ${kwd} - Nested ELEM sub-values:`, subValues);
+
+          // Get the sub-elements
+          const subElems = elem.querySelectorAll(":scope > Elem");
+          console.log(`[clPrompter] ${kwd} - Found ${subElems.length} sub-elements`);
+
+          // Populate each sub-element
+          for (let se = 0; se < subElems.length; se++) {
+            const subElemName = `${elemName}_SUB${se}`;
+            const subValue = subValues[se] !== undefined ? subValues[se] : "";
+
+            console.log(`[clPrompter] ${kwd} - Processing sub-element ${se}:`);
+            console.log(`[clPrompter]   - subElemName: ${subElemName}`);
+            console.log(`[clPrompter]   - subValue: "${subValue}"`);
+
+            // Find the sub-element input
+            let subInput = container.querySelector(`[name="${subElemName}"]`);
+
+            if (!subInput) {
+              // Try VS Code Elements
+              const vsCodeSelect = container.querySelector(`vscode-single-select[name="${subElemName}"]`);
+              const vsCodeTextfield = container.querySelector(`vscode-textfield[name="${subElemName}"]`);
+              subInput = vsCodeSelect || vsCodeTextfield;
+            }
+
+            if (subInput) {
+              if (subInput.tagName.toLowerCase() === 'vscode-single-select') {
+                // Handle VS Code select
+                subInput.value = subValue;
+                console.log(`[clPrompter]   - Set VS Code select: "${subValue}" for sub-element ${se}`);
+              } else {
+                // Handle regular input
+                subInput.value = subValue;
+                console.log(`[clPrompter]   - Set regular input: "${subValue}" for sub-element ${se} (${subInput.tagName})`);
+              }
+            } else {
+              console.log(`[clPrompter]   - NO SUB-INPUT FOUND for ${subElemName}`);
+
+              // ✅ Debug: List all available inputs in container
+              const allInputs = container.querySelectorAll('input, select, vscode-single-select, vscode-textfield');
+              console.log(`[clPrompter]   - Available inputs in container:`,
+                Array.from(allInputs).map(inp => `${inp.tagName}[name="${inp.name}"][id="${inp.id}"]`)
+              );
             }
           }
-          if (foundIdx !== -1 && value) {
-            select.selectedIndex = foundIdx;
-            customInput.value = "";
-          } else if (value) {
-            select.selectedIndex = -1;
-            customInput.value = value;
-          } else {
-            select.selectedIndex = -1;
-            customInput.value = "";
-          }
         } else {
-          const input = container.querySelector(`[name="${elemName}"]`);
-          if (input) input.value = value;
+          // ✅ Regular element processing (existing logic)
+          let input = container.querySelector(`[name="${elemName}"]`);
+
+          if (!input) {
+            // Try VS Code Elements
+            const vsCodeSelect = container.querySelector(`vscode-single-select[name="${elemName}"]`);
+            const vsCodeTextfield = container.querySelector(`vscode-textfield[name="${elemName}"]`);
+            input = vsCodeSelect || vsCodeTextfield;
+          }
+
+          if (!input) {
+            // Try select+custom pattern
+            const select = container.querySelector(`select[name="${elemName}"]`);
+            const customInput = container.querySelector(`#${elemName}_custom`);
+
+            if (select && customInput) {
+              // Handle select+custom logic
+              let foundIdx = -1;
+              for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value.trim().toUpperCase() === value.trim().toUpperCase()) {
+                  foundIdx = i;
+                  break;
+                }
+              }
+              if (foundIdx !== -1 && value) {
+                select.selectedIndex = foundIdx;
+                customInput.value = "";
+                console.log(`[clPrompter]   - Set select option ${foundIdx} for element ${e}`);
+              } else if (value) {
+                select.selectedIndex = -1;
+                customInput.value = value;
+                console.log(`[clPrompter]   - Set custom input "${value}" for element ${e}`);
+              }
+              continue;
+            }
+          }
+
+          if (input) {
+            if (input.tagName.toLowerCase() === 'vscode-single-select') {
+              // Handle VS Code select
+              input.value = value;
+              console.log(`[clPrompter]   - Set VS Code select: "${value}" for element ${e}`);
+            } else {
+              // Handle regular input
+              input.value = value;
+              console.log(`[clPrompter]   - Set regular input: "${value}" for element ${e} (${input.tagName})`);
+            }
+          } else {
+            console.log(`[clPrompter]   - NO INPUT FOUND for element ${e} (tried ${elemName})`);
+          }
         }
       }
+
+      console.log(`[clPrompter] ===== populateElemInputs END =====`);
     }
 
     function populateQualInputs(parm, kwd, vals, container = document) {
@@ -378,12 +1486,116 @@
       } else {
         parts = [];
       }
+
+      console.log(`[clPrompter] populateQualInputs: ${kwd}, parts:`, parts);
+      console.log(`[clPrompter] ===== populateQualInputs DEBUG =====`);
+      console.log(`[clPrompter] ${kwd} - Input vals:`, vals);
+      console.log(`[clPrompter] ${kwd} - Split parts:`, parts);
+      console.log(`[clPrompter] ${kwd} - Parts length:`, parts.length);
+      console.log(`[clPrompter] ${kwd} - Quals length:`, quals.length);
+
       for (let q = 0; q < quals.length; q++) {
         const qName = `${kwd}_QUAL${q}`;
-        const value = parts[parts.length - 1 - q] !== undefined ? parts[parts.length - 1 - q] : "";
+        // ✅ RESTORE reverse indexing - QUAL0 gets parts[length-1-0], QUAL1 gets parts[length-1-1]
+        const reverseIndex = parts.length - 1 - q;
+        const value = parts[reverseIndex] !== undefined ? parts[reverseIndex] : "";
+
+        console.log(`[clPrompter] ${kwd} - QUAL${q}:`);
+        console.log(`[clPrompter]   - qName: ${qName}`);
+        console.log(`[clPrompter]   - reverseIndex: ${reverseIndex} (${parts.length}-1-${q})`);
+        console.log(`[clPrompter]   - value: "${value}"`);
+        console.log(`[clPrompter]   - parts[${reverseIndex}]: "${parts[reverseIndex]}"`);
+
+        const vsCodeSelect = container.querySelector(`vscode-single-select[name="${qName}"]`);
         const select = container.querySelector(`select[name="${qName}"]`);
         const customInput = container.querySelector(`#${qName}_custom`);
-        if (select && customInput) {
+
+        console.log(`[clPrompter]   - Found vsCodeSelect: ${!!vsCodeSelect}`);
+        console.log(`[clPrompter]   - Found select: ${!!select}`);
+        console.log(`[clPrompter]   - Found customInput: ${!!customInput}`);
+
+        // ✅ Handle VS Code Elements combobox first
+        if (vsCodeSelect) {
+          console.log(`[clPrompter]   - Processing VS Code select for ${qName}`);
+          console.log(`[clPrompter]   - Value to set: "${value}"`);
+          console.log(`[clPrompter]   - Current vsCodeSelect.value before: "${vsCodeSelect.value}"`);
+
+          // Check if value exists in options first
+          const options = vsCodeSelect.querySelectorAll('vscode-option');
+          console.log(`[clPrompter]   - Found ${options.length} options`);
+
+          let foundOption = false;
+          for (let option of options) {
+            console.log(`[clPrompter]   - Checking option: "${option.value}"`);
+            if (option.value === value) {
+              vsCodeSelect.value = value;
+              foundOption = true;
+              console.log(`[clPrompter]   - Set VS Code select option: "${value}"`);
+              break;
+            }
+          }
+
+          // ✅ If not found in options, set custom value REGARDLESS of combobox attribute
+          if (!foundOption && value) {
+            console.log(`[clPrompter]   - Setting custom value: "${value}"`);
+
+            // ✅ Force set the value first
+            vsCodeSelect.value = value;
+
+            // ✅ Create a temporary option if needed (some VS Code Elements require this)
+            const tempOption = document.createElement("vscode-option");
+            tempOption.value = value;
+            tempOption.textContent = value;
+            tempOption.selected = true;
+            vsCodeSelect.appendChild(tempOption);
+
+            // ✅ Set value again after adding option
+            vsCodeSelect.value = value;
+
+            // ✅ Enhanced shadow DOM access
+            const trySetShadowDOM = () => {
+              if (vsCodeSelect.shadowRoot) {
+                const comboboxInput = vsCodeSelect.shadowRoot.querySelector('.combobox-input, input, .input');
+                if (comboboxInput) {
+                  comboboxInput.value = value;
+                  console.log(`[clPrompter]   - Set VS Code shadow DOM input: "${value}"`);
+                  return true;
+                }
+              }
+              return false;
+            };
+
+            // ✅ Try immediately and with delays
+            if (!trySetShadowDOM()) {
+              setTimeout(trySetShadowDOM, 10);
+              setTimeout(trySetShadowDOM, 50);
+              setTimeout(trySetShadowDOM, 100);
+            }
+
+            // ✅ Dispatch events to ensure updates
+            vsCodeSelect.dispatchEvent(new Event('input', { bubbles: true }));
+            vsCodeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            vsCodeSelect.requestUpdate?.();
+
+            console.log(`[clPrompter]   - Set VS Code select custom value: "${value}"`);
+          }
+
+          // ✅ Final verification with delay
+          setTimeout(() => {
+            console.log(`[clPrompter]   - Final verification - ${qName}.value: "${vsCodeSelect.value}"`);
+
+            // ✅ Additional fallback: if value still doesn't match, force it
+            if (vsCodeSelect.value !== value && value) {
+              console.log(`[clPrompter]   - Value mismatch detected, forcing value`);
+              vsCodeSelect.setAttribute('value', value);
+
+              // Try to set internal property directly
+              if (vsCodeSelect._value !== undefined) {
+                vsCodeSelect._value = value;
+              }
+            }
+          }, 150);
+        } else if (select && customInput) {
           let foundIdx = -1;
           for (let i = 0; i < select.options.length; i++) {
             if (select.options[i].value.trim().toUpperCase() === value.trim().toUpperCase()) {
@@ -394,24 +1606,89 @@
           if (foundIdx !== -1 && value) {
             select.selectedIndex = foundIdx;
             customInput.value = "";
+            console.log(`[clPrompter]   - Set HTML select option: "${value}"`);
           } else if (value) {
             select.selectedIndex = -1;
             customInput.value = value;
-          } else {
-            select.selectedIndex = -1;
-            customInput.value = "";
+            console.log(`[clPrompter]   - Set HTML custom input: "${value}"`);
           }
         } else {
           const input = container.querySelector(`[name="${qName}"]`);
-          if (input) input.value = value;
+          if (input) {
+            input.value = value;
+            console.log(`[clPrompter]   - Set regular input: "${value}"`);
+          } else {
+            console.log(`[clPrompter]   - NO INPUT FOUND for ${qName}`);
+          }
         }
       }
+      console.log(`[clPrompter] ===== END populateQualInputs DEBUG =====`);
     }
 
-    function populateFormFromValues(paramMap) {
+    function calculateFieldWidth(parm, allowedVals) {
+      const type = (parm.getAttribute('Type') || 'CHAR').toUpperCase();
+      const lenAttr = parm.getAttribute('Len') || '';
+
+      let effectiveLen = 10; // Default fallback
+
+      // Handle numeric types
+      if (type === 'INT2') {
+        effectiveLen = 6;  // -32768 to 32767
+      } else if (type === 'INT4') {
+        effectiveLen = 11; // -2147483648 to 2147483647
+      } else if (type === 'UINT2') {
+        effectiveLen = 5;  // 0 to 65535
+      } else if (type === 'UINT4') {
+        effectiveLen = 10; // 0 to 4294967295
+      } else if (type === 'DEC') {
+        // Parse "7.2" format - total digits + 1 for decimal point
+        if (lenAttr.includes('.')) {
+          const [totalDigits, decimalPlaces] = lenAttr.split('.').map(s => parseInt(s, 10));
+          effectiveLen = totalDigits + 1; // +1 for decimal point
+          console.log(`[calculateWidth] DEC ${lenAttr}: ${totalDigits} digits + decimal = ${effectiveLen} chars`);
+        } else {
+          effectiveLen = parseInt(lenAttr, 10) || 10;
+        }
+      } else {
+        // CHAR, NAME, CMDSTR, etc. - use declared length
+        // NOTE: May need special handling for *X Len="1" situations
+        effectiveLen = parseInt(lenAttr, 10) || 10;
+      }
+
+      // Find the longest SPCVAL/SNGVAL value
+      let maxSpcValLen = 0;
+      allowedVals.forEach(val => {
+        if (val && val !== '_noCustomInput' && !val.startsWith('_RANGE_')) {
+          maxSpcValLen = Math.max(maxSpcValLen, val.length);
+        }
+      });
+
+      // Use the larger of: calculated length OR longest SPCVAL
+      const finalLen = Math.max(effectiveLen, maxSpcValLen);
+
+      console.log(`[calculateWidth] ${parm.getAttribute('Kwd')}: Type=${type}, Len=${lenAttr}, Calculated=${effectiveLen}, MaxSpcVal=${maxSpcValLen}, Final=${finalLen}`);
+
+      return finalLen;
+    }
+
+    // ✅ Get CSS width class based on effective length
+    function getLengthClass(effectiveLen) {
+      if (effectiveLen <= 6) return 'input-xs';      // 80px - small numbers, short codes
+      if (effectiveLen <= 12) return 'input-sm';     // 120px - medium numbers, names
+      if (effectiveLen <= 25) return 'input-md';     // 200px - longer names, paths
+      if (effectiveLen <= 50) return 'input-lg';     // 300px - descriptions, titles
+      if (effectiveLen <= 80) return 'input-xl';     // 400px - long text
+      return 'input-full';                           // 100% - very long text (textarea)
+    }
+
+    function populateFormFromValues_ORIGINAL(paramMap) {
+      console.log("[clPrompter] populateFormFromValues called with:", paramMap);
+      console.log("[clPrompter] Keys to process:", Object.keys(paramMap));
       for (const [kwd, vals] of Object.entries(paramMap)) {
+        console.log(`[clPrompter] Processing parameter: ${kwd}, values:`, vals); // ✅ Add this line
         const group = document.querySelector(`.parm-multi-group[data-kwd="${kwd}"]`);
         if (group) {
+          console.log(`[clPrompter] ${kwd} - Found multi-group, skipping ELEM check`); // ✅ Add this
           let instances = group.querySelectorAll('.parm-instance');
           for (let i = 1; i < instances.length; i++) instances[i].remove();
           let splitValsArr = flattenParmValue(vals);
@@ -424,6 +1701,7 @@
             if (!inst) continue;
             const parm = Array.from(parms).find(p => p.getAttribute("Kwd") === kwd);
             if (parm && parm.getElementsByTagName("Elem").length > 0) {
+              console.log(`[clPrompter] ${kwd} - Processing ELEM parameter, values:`, vals);
               populateElemInputs(parm, kwd, splitValsArr[i], i, inst);
               continue;
             }
@@ -431,6 +1709,8 @@
               populateQualInputs(parm, kwd, splitValsArr[i], inst);
               continue;
             }
+            console.log(`[clPrompter] ${kwd} - Processing as simple parameter`); // ✅ Add this
+
             const select = inst.querySelector(`select[name="${kwd}"]`);
             const customInput = inst.querySelector(`#${kwd}_custom`);
             let value = (splitValsArr[i] !== undefined && splitValsArr[i] !== null && splitValsArr[i] !== "")
@@ -480,123 +1760,52 @@
       document.querySelectorAll('.elem-group').forEach(group => handleSngvalLocking(group));
     }
 
-    function buildAllowedValsMap() {
-      allowedValsMap = {};
-      if (!parms) return;
-      parms.forEach(parm => {
-        const kwd = parm.getAttribute("Kwd");
-        // --- For Parm itself ---
-        let vals = [];
-        // <Values>
-        const values = parm.getElementsByTagName("Values");
-        if (values.length > 0) {
-          vals = vals.concat(Array.from(values[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-        }
-        // <SpcVal>
-        const spcvals = parm.getElementsByTagName("SpcVal");
-        if (spcvals.length > 0) {
-          vals = vals.concat(Array.from(spcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-        }
-        // <SngVal>
-        const sngvals = parm.getElementsByTagName("SngVal");
-        if (sngvals.length > 0) {
-          vals = vals.concat(Array.from(sngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-        }
-        let hasSngval = sngvals.length > 0;
-        let hasSpcval = spcvals.length > 0;
-        let hasValues = values.length > 0;
-        let hasRange = parm.getElementsByTagName("Range").length > 0;
+    function setupSngValLockingForFirstElem(container, firstElemSelectId, kwd) {
+      const firstElemSelect = container.querySelector(`#${firstElemSelectId}`);
+      if (!firstElemSelect) return;
 
-        if (vals.length > 0) {
-          allowedValsMap[kwd] = vals.filter(Boolean);
-          if (
-            parm.getAttribute("Rstd") === "Y" ||
-            (
-              (hasValues || hasRange) &&
-              !hasSngval &&
-              !hasSpcval
-            )
-          ) {
-            allowedValsMap[kwd]._noCustomInput = true;
-          }
-        }
-        // --- For each Elem ---
-        const elems = parm.getElementsByTagName("Elem");
-        for (let e = 0; e < elems.length; e++) {
-          const elem = elems[e];
-          let elemVals = [];
-          const elemName = `${kwd}_ELEM${e}`;
-          const elemValues = elem.getElementsByTagName("Values");
-          if (elemValues.length > 0) {
-            elemVals = elemVals.concat(Array.from(elemValues[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-          }
-          const elemSpcvals = elem.getElementsByTagName("SpcVal");
-          if (elemSpcvals.length > 0) {
-            elemVals = elemVals.concat(Array.from(elemSpcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-          }
-          const elemSngvals = elem.getElementsByTagName("SngVal");
-          if (elemSngvals.length > 0) {
-            elemVals = elemVals.concat(Array.from(elemSngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-          }
-          let hasElemSngval = elemSngvals.length > 0;
-          let hasElemSpcval = elemSpcvals.length > 0;
-          let hasElemValues = elemValues.length > 0;
-          let hasElemRange = elem.getElementsByTagName("Range").length > 0;
+      function updateElemLocking() {
+        const selectedOption = firstElemSelect.selectedOptions[0];
+        const isSngVal = selectedOption && selectedOption.getAttribute("data-sngval") === "true";
 
-          if (elemVals.length > 0) {
-            allowedValsMap[elemName] = elemVals.filter(Boolean);
-            if (
-              elem.getAttribute("Rstd") === "Y" ||
-              (
-                (hasElemValues || hasElemRange) &&
-                !hasElemSngval &&
-                !hasElemSpcval
-              )
-            ) {
-              allowedValsMap[elemName]._noCustomInput = true;
+        // Find all OTHER ELEM inputs in this container (not the first one)
+        const otherElemInputs = container.querySelectorAll(`[name^="${kwd}_ELEM"]:not([name="${firstElemSelectId}"])`);
+
+        if (isSngVal) {
+          // SngVal selected - disable and clear all OTHER ELEM inputs
+          otherElemInputs.forEach(input => {
+            input.disabled = true;
+            input.value = "";
+
+            const parent = input.closest('.form-div');
+            if (parent) {
+              parent.style.opacity = '0.5';
+              parent.title = 'Disabled because single value is selected above';
             }
-          }
-        }
-        // --- For each Qual ---
-        const quals = parm.getElementsByTagName("Qual");
-        for (let q = 0; q < quals.length; q++) {
-          const qual = quals[q];
-          let qualVals = [];
-          const qualName = `${kwd}_QUAL${q}`;
-          const qualValues = qual.getElementsByTagName("Values");
-          if (qualValues.length > 0) {
-            qualVals = qualVals.concat(Array.from(qualValues[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-          }
-          const qualSpcvals = qual.getElementsByTagName("SpcVal");
-          if (qualSpcvals.length > 0) {
-            qualVals = qualVals.concat(Array.from(qualSpcvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-          }
-          const qualSngvals = qual.getElementsByTagName("SngVal");
-          if (qualSngvals.length > 0) {
-            qualVals = qualVals.concat(Array.from(qualSngvals[0].getElementsByTagName("Value")).map(v => v.getAttribute("Val") || v.getAttribute("Value")));
-          }
-          let hasQualSngval = qualSngvals.length > 0;
-          let hasQualSpcval = qualSpcvals.length > 0;
-          let hasQualValues = qualValues.length > 0;
-          let hasQualRange = qual.getElementsByTagName("Range").length > 0;
+          });
+        } else {
+          // No SngVal selected - enable all OTHER ELEM inputs
+          otherElemInputs.forEach(input => {
+            input.disabled = false;
 
-          if (qualVals.length > 0) {
-            allowedValsMap[qualName] = qualVals.filter(Boolean);
-            if (
-              qual.getAttribute("Rstd") === "Y" ||
-              (
-                (hasQualValues || hasQualRange) &&
-                !hasQualSngval &&
-                !hasQualSpcval
-              )
-            ) {
-              allowedValsMap[qualName]._noCustomInput = true;
+            const parent = input.closest('.form-div');
+            if (parent) {
+              parent.style.opacity = '1';
+              parent.title = '';
             }
-          }
+          });
         }
-      });
-      console.log("[clPrompter] allowedValsMap:", allowedValsMap);
+      }
+
+      // Listen for changes
+      firstElemSelect.addEventListener('change', updateElemLocking);
+
+      // Initial setup
+      updateElemLocking();
     }
+
+
+
     function handleSngvalLocking(container) {
       const sngvalSelects = container.querySelectorAll('select[data-has-sngval="true"]');
       sngvalSelects.forEach(select => {
@@ -651,65 +1860,91 @@
     }
 
     function createInputForType(type, name, value, len) {
-      type = (type || "text").toUpperCase();
-      let input;
-      switch (type) {
-        case "*DEC":
-        case "*INT2":
-        case "*INT4":
-        case "*UINT2":
-        case "*UINT4":
-          input = document.createElement("input");
-          input.type = "number";
-          break;
-        case "*DATE":
-          input = document.createElement("input");
-          input.type = "date";
-          break;
-        case "*TIME":
-          input = document.createElement("input");
-          input.type = "time";
-          break;
-        case "*LGL":
-          input = document.createElement("input");
-          input.type = "checkbox";
-          input.checked = value === "1" || value === "Y" || value === "TRUE";
-          break;
-        case "*NULL":
-          input = document.createElement("input");
-          input.type = "hidden";
-          break;
-        case "*CMDSTR":
-        case "*CMD":
-          input = document.createElement("textarea");
+      console.log(`[clPrompter] createInputForType called: type=${type}, name=${name}, value=${value}, len=${len}`);
+
+      try {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = name;
+        input.id = name;
+
+        console.log(`[clPrompter] Created basic input for ${name}`);
+
+        // Set default value
+        if (value) {
           input.value = value;
-          if (len) input.maxLength = parseInt(len, 10);
-          break;
-        case "*HEX":
-          input = document.createElement("input");
-          input.type = "text";
-          input.pattern = "[0-9A-Fa-f]*";
-          break;
-        case "*X":
-          input = document.createElement("input");
-          input.type = "text";
-          break;
-        default:
-          input = document.createElement("input");
-          input.type = "text";
-          break;
+          input.setAttribute('data-default', value);
+          console.log(`[clPrompter] Set value for ${name}: ${value}`);
+        }
+
+        // Set max length
+        if (len && !isNaN(len)) {
+          input.setAttribute("maxlength", len);
+          console.log(`[clPrompter] Set maxlength for ${name}: ${len}`);
+        }
+
+        console.log(`[clPrompter] About to process switch for type: ${type}`);
+
+        switch (type) {
+          case "*DEC":
+          case "*INT2":
+          case "*INT4":
+          case "*UINT2":
+          case "*UINT4":
+            console.log(`[clPrompter] Processing number type: ${type}`);
+            input.type = "number";  // ✅ Don't recreate, just change type
+            break;
+          case "*DATE":
+            console.log(`[clPrompter] Processing date type: ${type}`);
+            input.type = "date";
+            break;
+          case "*TIME":
+            console.log(`[clPrompter] Processing time type: ${type}`);
+            input.type = "time";
+            break;
+          case "*LGL":
+            console.log(`[clPrompter] Processing logical type: ${type}`);
+            // Keep as text input for now to avoid complication
+            input.type = "text";
+            break;
+          case "*NULL":
+            console.log(`[clPrompter] Processing null type: ${type}`);
+            input.type = "hidden";
+            break;
+          case "*CMDSTR":
+          case "*CMD":
+            console.log(`[clPrompter] Processing command string type: ${type}`);
+            // For now, just use a regular textarea
+            const textarea = document.createElement("textarea");
+            textarea.name = name;
+            textarea.id = name;
+            if (value) textarea.value = value;
+            if (len && !isNaN(len)) textarea.maxLength = parseInt(len, 10);
+            console.log(`[clPrompter] Created textarea for ${name}`);
+            return textarea;
+          case "*HEX":
+            console.log(`[clPrompter] Processing hex type: ${type}`);
+            input.type = "text";
+            input.pattern = "[0-9A-Fa-f]*";
+            break;
+          default:
+            console.log(`[clPrompter] Processing default type: ${type}`);
+            input.type = "text";
+            break;
+        }
+
+        console.log(`[clPrompter] Successfully created input for ${name}, type=${input.type}`);
+        return input;
+
+      } catch (error) {
+        console.error(`[clPrompter] Error in createInputForType for ${name}:`, error);
+        // Return a basic input as fallback
+        const fallbackInput = document.createElement("input");
+        fallbackInput.type = "text";
+        fallbackInput.name = name;
+        fallbackInput.id = name;
+        return fallbackInput;
       }
-      input.name = name;
-      if (type !== "*LGL" && type !== "*NULL" && type !== "*CMDSTR" && type !== "*CMD") {
-        input.value = value;
-      }
-      if (len && input.type !== "hidden" && input.type !== "checkbox" && input.type !== "date" && input.type !== "time" && input.type !== "number") {
-        input.maxLength = parseInt(len, 10);
-      }
-      if (type === "*NULL") {
-        input.value = "";
-      }
-      return input;
     }
 
     function isValidName(val) {
@@ -726,7 +1961,57 @@
       return /^[A-Z$#@][A-Z0-9$#@_.]{0,10}$/i.test(trimmed);
     }
 
+    function setupSngValLocking(container, sngValSelectId, kwd) {
+      const sngValSelect = container.querySelector(`#${sngValSelectId}`);
+      if (!sngValSelect) return;
 
+      function updateSngValLocking() {
+        const selectedOption = sngValSelect.selectedOptions[0];
+        const isSngVal = selectedOption && selectedOption.getAttribute("data-sngval") === "true";
+
+        // Find all ELEM inputs in this container
+        const elemInputs = container.querySelectorAll(`[name^="${kwd}_ELEM"]`);
+
+        if (isSngVal) {
+          // SngVal selected - disable and clear all ELEM inputs
+          elemInputs.forEach(input => {
+            input.disabled = true;
+            if (input.tagName.toLowerCase() === 'vscode-single-select') {
+              input.value = "";
+            } else if (input.tagName.toLowerCase() === 'vscode-textfield') {
+              input.value = "";
+            } else {
+              input.value = "";
+            }
+          });
+
+          // Add visual indication
+          elemInputs.forEach(input => {
+            const parent = input.closest('.form-div');
+            if (parent) {
+              parent.style.opacity = '0.5';
+              parent.title = 'Disabled because single value is selected above';
+            }
+          });
+        } else {
+          // No SngVal selected - enable all ELEM inputs
+          elemInputs.forEach(input => {
+            input.disabled = false;
+            const parent = input.closest('.form-div');
+            if (parent) {
+              parent.style.opacity = '1';
+              parent.title = '';
+            }
+          });
+        }
+      }
+
+      // Listen for changes
+      sngValSelect.addEventListener('change', updateSngValLocking);
+
+      // Initial setup
+      updateSngValLocking();
+    }
 
     function getDropdownOrCustomValue(selectElem) {
       if (selectElem && selectElem.dataset.customInputId) {
@@ -747,160 +2032,609 @@
       const len = parm.getAttribute("Len") || "";
       const required = parm.getAttribute("Min") === "1";
       const instanceId = `${kwd}_INST${idx}`;
+
       const div = document.createElement("div");
       div.className = "parm-instance";
       div.dataset.kwd = kwd;
 
-      // Label
-      // Only add Parm label for simple parameters (not ELEM or QUAL)
+      // Determine parameter type and render accordingly
       const isElem = (type === "ELEM" || parm.getElementsByTagName("Elem").length > 0);
       const isQual = parm.getElementsByTagName("Qual").length > 0;
+
+      // Add label for simple parameters only
       if (!isElem && !isQual) {
-        const label = document.createElement("label");
-        label.className = "form-label";
-        // Only append (Kwd) on the first instance
-        let labelText = prompt;
-        if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
-          labelText += ` (${kwd})`;
-        }
-        if (max > 1) labelText += ` [${idx + 1}]`;
-        label.textContent = labelText;
-        label.htmlFor = instanceId;
-        div.appendChild(label);
+        addParameterLabel(div, prompt, kwd, idx, max, instanceId);
       }
 
-      // ELEM (list) parameter
-      if (type === "ELEM" || parm.getElementsByTagName("Elem").length > 0) {
-        const elems = parm.getElementsByTagName("Elem");
-        const fieldset = document.createElement("fieldset");
-        fieldset.className = "elem-group";
-        const legend = document.createElement("legend");
-        let legendText = prompt;
-        if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
-          legendText += ` (${kwd})`;
-        }
-        legend.textContent = legendText;
-        fieldset.appendChild(legend);
-
-        for (let e = 0; e < elems.length; e++) {
-          const elem = elems[e];
-          const elemPrompt = elem.getAttribute("Prompt") || elem.getAttribute("Name") || `Element ${e + 1}`;
-          const elemType = elem.getAttribute("Type") || "CHAR";
-          const elemLen = elem.getAttribute("Len") || "";
-          const elemName = `${kwd}_ELEM${e}`;
-
-          const elemDiv = document.createElement("div");
-          elemDiv.className = "form-div";
-          const elemLabel = document.createElement("label");
-          elemLabel.className = "form-label";
-          elemLabel.textContent = elemPrompt;
-          elemLabel.htmlFor = elemName;
-          elemDiv.appendChild(elemLabel);
-          const allowedVals = allowedValsMap[elemName] || [];
-          if (allowedVals.length > 0) {
-            const noCustomInput = allowedVals._noCustomInput === true;
-            const dropdown = createDropdownWithCustomInput(elemName, allowedVals, undefined, [], noCustomInput);
-            elemDiv.appendChild(dropdown);
-          } else {
-            const elemInput = createInputForType(elemType, elemName, dft, elemLen);
-            elemDiv.appendChild(elemInput);
-          } fieldset.appendChild(elemDiv);
-        }
-        div.appendChild(fieldset);
-      }
-      // QUAL parameter
-      else if (parm.getElementsByTagName("Qual").length > 0) {
-        const quals = parm.getElementsByTagName("Qual");
-        const fieldset = document.createElement("fieldset");
-        fieldset.className = "qual-group";
-
-        const legend = document.createElement("legend");
-        let legendText = prompt;
-        if (kwd && !prompt.includes(`(${kwd})`)) {
-          legendText += ` (${kwd})`;
-        }
-        legend.textContent = legendText;
-        fieldset.appendChild(legend);
-
-        for (let q = 0; q < quals.length; q++) {
-          const qual = quals[q];
-          const qualPrompt_X = qual.getAttribute("Prompt") || qual.getAttribute("Name") || `Qualifier ${q + 1}`;
-          const qualPrompt = (q === 0)
-            ? prompt
-            : (qual.getAttribute("Prompt") || qual.getAttribute("Name") || `Qualifier ${q + 1}`);
-
-          const qualType = qual.getAttribute("Type") || "CHAR";
-          const qualLen = qual.getAttribute("Len") || "";
-          const qualName = `${kwd}_QUAL${q}`;
-          const qualDiv = document.createElement("div");
-          qualDiv.className = "form-div";
-
-          const qualLabel = document.createElement("label");
-          qualLabel.className = "form-label";
-          qualLabel.textContent = qualPrompt;
-          qualLabel.htmlFor = qualName;
-          qualDiv.appendChild(qualLabel);
-          const allowedVals = allowedValsMap[qualName] || [];
-          if (allowedVals.length > 0) {
-            const noCustomInput = allowedVals._noCustomInput === true;
-            const dropdown = createDropdownWithCustomInput(qualName, allowedVals, undefined, [], noCustomInput);
-            qualDiv.appendChild(dropdown);
-          } else {
-            const qualInput = createInputForType(qualType, qualName, dft, qualLen);
-            qualDiv.appendChild(qualInput);
-          }
-          fieldset.appendChild(qualDiv);
-        }
-        div.appendChild(fieldset);
-      }
-      // Simple parameter
-      else {
-        const allowedVals = allowedValsMap[kwd] || [];
-        if (allowedVals.length > 0) {
-          const noCustomInput = allowedVals._noCustomInput === true;
-          const dropdown = createDropdownWithCustomInput(kwd, allowedVals, undefined, [], noCustomInput);
-          div.appendChild(dropdown);
-        } else {
-          const input = createInputForType(type, kwd, dft, len);
-          input.id = instanceId;
-          if (required) input.required = true;
-          div.appendChild(input);
-        }
+      // Render based on parameter type
+      if (isElem) {
+        renderElemParameter(parm, kwd, idx, div, prompt, dft, max); // ✅ Pass max
+      } else if (isQual) {
+        renderQualParameter(parm, kwd, div, prompt, idx, max); // ✅ Pass idx and max
+      } else {
+        renderSimpleParameter(parm, kwd, div, dft, required, instanceId);
       }
 
-      // Multi-instance controls
+      // Add multi-instance controls
       if (max > 1 && multiGroupDiv) {
-        if (idx === 0) {
-          const addBtn = document.createElement("button");
-          addBtn.type = "button";
-          addBtn.className = "add-parm-btn";
-          addBtn.textContent = "+";
-          addBtn.title = "Add another instance";
-          addBtn.onclick = function () {
-            const instances = multiGroupDiv.querySelectorAll(".parm-instance");
-            if (instances.length < max) {
-              const newIdx = instances.length;
-              const newDiv = renderParmInstance(parm, kwd, newIdx, max, multiGroupDiv);
-              multiGroupDiv.appendChild(newDiv);
-            }
-          };
-          div.appendChild(addBtn);
-        }
-        if (idx > 0) {
-          const removeBtn = document.createElement("button");
-          removeBtn.type = "button";
-          removeBtn.className = "remove-parm-btn";
-          removeBtn.textContent = "-";
-          removeBtn.title = "Remove this instance";
-          removeBtn.onclick = function () {
-            div.remove();
-          };
-          div.appendChild(removeBtn);
-        }
+        addMultiInstanceControls(div, parm, kwd, idx, max, multiGroupDiv);
       }
 
       return div;
     }
+
+    function addParameterLabel(container, prompt, kwd, idx, max, instanceId) {
+      const label = document.createElement("label");
+      label.className = "form-label";
+
+      let labelText = prompt;
+      if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
+        labelText += ` (${kwd})`;
+      }
+      if (max > 1) {
+        labelText += ` [${idx + 1}]`;
+      }
+
+      label.textContent = labelText;
+      label.htmlFor = instanceId;
+      container.appendChild(label);
+    }
+
+    function renderElemParameter(parm, kwd, idx, container, prompt, dft, max = 1) {
+      console.log(`[clPrompter] Processing ELEM parameter: ${kwd}, instance: ${idx}, max: ${max}`);
+
+      const fieldset = document.createElement("fieldset");
+      fieldset.className = "elem-group";
+
+      // Add legend
+      const legend = document.createElement("legend");
+      let legendText = prompt;
+      if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
+        legendText += ` (${kwd})`;
+      }
+      if (max > 1) {
+        legendText += ` [${idx + 1}]`;
+      }
+      legend.textContent = legendText;
+      fieldset.appendChild(legend);
+
+
+      const isMultiInstance = max > 1;
+      addElemChildren(fieldset, parm, kwd, idx, isMultiInstance);
+
+      container.appendChild(fieldset);
+      console.log(`[clPrompter] Completed ELEM parameter: ${kwd}`);
+    }
+
+    function addSngValControl(container, parm, kwd, prompt, dft, sngVal, instanceIdx = 0, isMultiInstance = false) {
+      console.log(`[clPrompter] Adding SngVal for ${kwd}, instance: ${instanceIdx}`);
+
+      const sngValDiv = document.createElement("div");
+      sngValDiv.className = "form-div";
+
+      const sngValLabel = document.createElement("label");
+      sngValLabel.className = "form-label";
+      sngValLabel.textContent = prompt;
+
+      const sngValId = isMultiInstance ? `${kwd}_SNGVAL_${instanceIdx}` : `${kwd}_SNGVAL`;
+      sngValLabel.htmlFor = sngValId;
+      sngValDiv.appendChild(sngValLabel);
+
+      // Create VS Code Elements combobox for SngVal
+      const sngValSelect = document.createElement("vscode-single-select");
+      sngValSelect.id = sngValId;
+      sngValSelect.name = sngValId;
+      sngValSelect.setAttribute("combobox", "");
+
+      if (dft) {
+        sngValSelect.setAttribute('data-default', dft);
+      }
+
+      // ✅ Add empty option first
+      const emptyOption = document.createElement("vscode-option");
+      emptyOption.value = "";
+      emptyOption.textContent = "(specify individual elements)"; // ✅ More descriptive text
+      sngValSelect.appendChild(emptyOption);
+
+      // ✅ Add SngVal options in their own group
+      const sngValues = sngVal.querySelectorAll("Value");
+      if (sngValues.length > 0) {
+        const sngGroup = document.createElement("optgroup");
+        sngGroup.label = "Single Values";
+
+        sngValues.forEach(val => {
+          const option = document.createElement("vscode-option");
+          option.value = val.getAttribute("Val");
+          option.textContent = val.getAttribute("Val");
+          option.setAttribute("data-sngval", "true");
+
+          // Select default option
+          if (val.getAttribute("Val") === dft) {
+            option.selected = true;
+            sngValSelect.value = dft;
+          }
+
+          sngGroup.appendChild(option);
+        });
+
+        sngValSelect.appendChild(sngGroup);
+      }
+
+      // ✅ Add Values options (if any)
+      const values = parm.querySelector("Values");
+      if (values) {
+        const valuesGroup = document.createElement("optgroup");
+        valuesGroup.label = "Values";
+
+        const valueElements = values.querySelectorAll("Value");
+        valueElements.forEach(val => {
+          const valText = val.getAttribute("Val");
+
+          // Don't duplicate SngVal entries
+          const isDuplicate = Array.from(sngValues).some(sngVal =>
+            sngVal.getAttribute("Val") === valText
+          );
+
+          if (!isDuplicate) {
+            const option = document.createElement("vscode-option");
+            option.value = valText;
+            option.textContent = valText;
+
+            if (valText === dft) {
+              option.selected = true;
+              sngValSelect.value = dft;
+            }
+
+            valuesGroup.appendChild(option);
+          }
+        });
+
+        if (valuesGroup.children.length > 0) {
+          sngValSelect.appendChild(valuesGroup);
+        }
+      }
+
+      // ✅ Add SpcVal options last
+      const spcVal = parm.querySelector("SpcVal");
+      if (spcVal) {
+        const spcGroup = document.createElement("optgroup");
+        spcGroup.label = "Special Values";
+
+        const spcValues = spcVal.querySelectorAll("Value");
+        spcValues.forEach(val => {
+          const valText = val.getAttribute("Val");
+
+          // Don't duplicate SngVal or Values entries
+          const isDuplicate =
+            Array.from(sngValues).some(sngVal => sngVal.getAttribute("Val") === valText) ||
+            (values && Array.from(values.querySelectorAll("Value")).some(value => value.getAttribute("Val") === valText));
+
+          if (!isDuplicate) {
+            const option = document.createElement("vscode-option");
+            option.value = valText;
+            option.textContent = valText;
+
+            if (valText === dft) {
+              option.selected = true;
+              sngValSelect.value = dft;
+            }
+
+            spcGroup.appendChild(option);
+          }
+        });
+
+        if (spcGroup.children.length > 0) {
+          sngValSelect.appendChild(spcGroup);
+        }
+      }
+
+      sngValDiv.appendChild(sngValSelect);
+      container.appendChild(sngValDiv);
+    }
+
+    function setupSngValLockingForNestedElements(container, sngValSelectId, nestedContainer) {
+      const sngValSelect = container.querySelector(`#${sngValSelectId}`);
+      if (!sngValSelect) return;
+
+      function updateNestedElementsVisibility() {
+        const selectedOption = sngValSelect.selectedOptions[0];
+        const isSngVal = selectedOption && selectedOption.getAttribute("data-sngval") === "true";
+        const hasValue = sngValSelect.value && sngValSelect.value.trim() !== "";
+
+        console.log(`[clPrompter] SngVal changed: value="${sngValSelect.value}", isSngVal=${isSngVal}`);
+
+        if (isSngVal || hasValue) {
+          // SngVal selected or any value entered - hide nested elements
+          nestedContainer.style.display = "none";
+          console.log(`[clPrompter] Hiding nested elements (SngVal selected)`);
+        } else {
+          // No value or empty selection - show nested elements
+          nestedContainer.style.display = "block";
+          console.log(`[clPrompter] Showing nested elements (no SngVal)`);
+        }
+      }
+
+      // Listen for changes
+      sngValSelect.addEventListener('change', updateNestedElementsVisibility);
+      sngValSelect.addEventListener('input', updateNestedElementsVisibility);
+
+      // Initial setup
+      updateNestedElementsVisibility();
+    }
+
+    // ✅ Enhance your existing addElemChildren function to handle ELEM within ELEM
+    // ✅ Replace getElementsByTagName with querySelectorAll to get only direct children
+    function addElemChildren(container, parm, kwd, instanceIdx = 0, isMultiInstance = false) {
+      // ✅ Use ":scope > Elem" to get only DIRECT child Elem elements
+      const elems = parm.querySelectorAll(":scope > Elem");
+      console.log(`[clPrompter] Processing ${elems.length} DIRECT Elem children for ${kwd}, isMultiInstance: ${isMultiInstance}`);
+
+      for (let e = 0; e < elems.length; e++) {
+        const elem = elems[e];
+        const elemPrompt = elem.getAttribute("Prompt") || elem.getAttribute("Name") || `Element ${e + 1}`;
+        const elemType = elem.getAttribute("Type") || "CHAR";
+        const elemLen = elem.getAttribute("Len") || "";
+        const elemDft = elem.getAttribute("Dft") || "";
+
+        // ✅ Use instance suffix only for multi-instance parameters
+        const elemName = isMultiInstance ? `${kwd}_ELEM${e}_${instanceIdx}` : `${kwd}_ELEM${e}`;
+
+        console.log(`[clPrompter] Creating elem ${e}: ${elemName}, type: ${elemType}, default: ${elemDft}`);
+
+        // ✅ Handle nested ELEM (ELEM within ELEM) - like TOPGMQ's "Call stack entry identifier"
+        // ✅ Update the nested ELEM creation in addElemChildren
+        // ✅ Handle nested ELEM (ELEM within ELEM) - use numeric pattern
+        if (elemType === "ELEM") {
+          console.log(`[clPrompter] Found nested ELEM: ${elemName}`);
+
+          // Create a sub-fieldset for the nested ELEM
+          const subFieldset = document.createElement("fieldset");
+          subFieldset.className = "elem-group nested-elem-group";
+          subFieldset.style.marginLeft = "15px";
+          subFieldset.style.border = "1px solid #aaa";
+          subFieldset.style.backgroundColor = "#f5f5f5";
+
+          const subLegend = document.createElement("legend");
+          subLegend.textContent = elemPrompt;
+          subFieldset.appendChild(subLegend);
+
+          // ✅ Process the sub-elements with numeric pattern
+          const subElems = elem.querySelectorAll(":scope > Elem");
+          for (let se = 0; se < subElems.length; se++) {
+            const subElem = subElems[se];
+            const subElemPrompt = subElem.getAttribute("Prompt") || `Sub-element ${se + 1}`;
+            const subElemType = subElem.getAttribute("Type") || "CHAR";
+            const subElemLen = subElem.getAttribute("Len") || "";
+            const subElemDft = subElem.getAttribute("Dft") || "";
+
+            // ✅ NEW: Use numeric pattern - ELEM#_index
+            const subElemName = `${elemName}_${se}`;
+
+            console.log(`[clPrompter] Creating sub-elem ${se}: ${subElemName}, type: ${subElemType}`);
+
+            const subElemDiv = document.createElement("div");
+            subElemDiv.className = "form-div";
+
+            const subElemLabel = document.createElement("label");
+            subElemLabel.className = "form-label";
+            subElemLabel.textContent = subElemPrompt;
+            subElemLabel.htmlFor = subElemName;
+            subElemDiv.appendChild(subElemLabel);
+
+            // Create input for sub-element
+            const subElemInput = createElemInput(subElem, subElemName, subElemType, subElemLen, subElemDft, kwd);
+            subElemDiv.appendChild(subElemInput);
+            subFieldset.appendChild(subElemDiv);
+          }
+
+          container.appendChild(subFieldset);
+
+          // ✅ In addElemChildren function, update this section:
+        } else {
+          // ✅ Regular element - DON'T add level indicator for simple ELEMs
+          const elemDiv = document.createElement("div");
+          elemDiv.className = "form-div";
+
+          const elemLabel = document.createElement("label");
+          elemLabel.className = "form-label";
+          elemLabel.textContent = elemPrompt;
+
+          // ✅ Use simple naming for regular elements: LOG_ELEM0, not LOG_ELEM0_0
+          elemLabel.htmlFor = elemName; // Use elemName directly
+          elemDiv.appendChild(elemLabel);
+
+          // Create appropriate input based on allowed values
+          const elemInput = createElemInput(elem, elemName, elemType, elemLen, elemDft, kwd); // Use elemName
+          elemDiv.appendChild(elemInput);
+          container.appendChild(elemDiv);
+        }
+      }
+    }
+
+    function createElemInput(elem, elemName, elemType, elemLen, elemDft, kwd) {
+      const allowedVals = allowedValsMap[elemName] || [];
+      const noCustomInput = allowedVals._noCustomInput === true;
+
+      let elemInput;
+
+      // ✅ Use allowedValsMap first (it already consolidates SpcVal, SngVal, Values)
+      if (allowedVals.length > 0) {
+        // Always allow custom input for ELEM parameters (override noCustomInput)
+        elemInput = createParameterInput(elemName, allowedVals, noCustomInput, elemDft);
+      } else {
+        // ✅ Create regular input (no special SpcVal handling needed here)
+        elemInput = createInputForType(elemType, elemName, elemDft, elemLen);
+        if (elemDft) {
+          elemInput.setAttribute('data-default', elemDft);
+        }
+      }
+
+      // Set common attributes
+      elemInput.name = elemName;
+      elemInput.id = elemName;
+
+      return elemInput;
+    }
+
+    function createVSCodeSelect(name, spcValElement, defaultValue = "") {
+      const select = document.createElement("vscode-single-select");
+      select.setAttribute("combobox", "");
+
+      // Add empty option if no default
+      if (!defaultValue) {
+        const emptyOption = document.createElement("vscode-option");
+        emptyOption.value = "";
+        emptyOption.textContent = "";
+        select.appendChild(emptyOption);
+      }
+
+      // Add options from SpcVal
+      const values = spcValElement.querySelectorAll("Value");
+      values.forEach(val => {
+        const option = document.createElement("vscode-option");
+        option.value = val.getAttribute("Val");
+        option.textContent = val.getAttribute("Val");
+
+        if (val.getAttribute("Val") === defaultValue) {
+          option.selected = true;
+          select.value = defaultValue;
+        }
+
+        select.appendChild(option);
+      });
+
+      if (defaultValue) {
+        select.setAttribute('data-default', defaultValue);
+      }
+
+      return select;
+    }
+
+    function renderQualParameter(parm, kwd, container, prompt, instanceIdx = 0, max = 1) {
+      const quals = parm.getElementsByTagName("Qual");
+      const fieldset = document.createElement("fieldset");
+      fieldset.className = "qual-group";
+
+      const legend = document.createElement("legend");
+      let legendText = prompt;
+      if (kwd && !prompt.includes(`(${kwd})`)) {
+        legendText += ` (${kwd})`;
+      }
+      if (max > 1) {
+        legendText += ` [${instanceIdx + 1}]`;
+      }
+      legend.textContent = legendText;
+      fieldset.appendChild(legend);
+
+      const isMultiInstance = max > 1;
+
+      for (let q = 0; q < quals.length; q++) {
+        const qual = quals[q];
+        const qualPrompt = (q === 0)
+          ? prompt  // First QUAL uses parameter prompt
+          : (qual.getAttribute("Prompt") || `Qualifier ${q + 1}`); // Others use their own
+
+
+        const qualType = qual.getAttribute("Type") || "CHAR";
+        const qualLen = qual.getAttribute("Len") || "";
+        const qualDft = qual.getAttribute("Dft") || "";
+
+        // ✅ Use instance suffix only for multi-instance parameters
+        const qualName = isMultiInstance ? `${kwd}_QUAL${q}_${instanceIdx}` : `${kwd}_QUAL${q}`;
+
+        console.log(`[clPrompter] Creating qual ${q}: ${qualName}, type: ${qualType}, default: ${qualDft}`);
+
+        const qualDiv = document.createElement("div");
+        qualDiv.className = "form-div";
+
+        const qualLabel = document.createElement("label");
+        qualLabel.className = "form-label";
+        qualLabel.textContent = qualPrompt;
+        qualLabel.htmlFor = qualName;
+        qualDiv.appendChild(qualLabel);
+
+        // Create appropriate input for qualifier
+        const qualInput = createQualInput(qual, qualName, qualType, qualLen, qualDft);
+        qualDiv.appendChild(qualInput);
+        fieldset.appendChild(qualDiv);
+      }
+
+      container.appendChild(fieldset);
+    }
+
+    function createQualInput(qual, qualName, qualType, qualLen, qualDft) {
+      const allowedVals = allowedValsMap[qualName] || [];
+      const noCustomInput = allowedVals._noCustomInput === true;
+
+      let qualInput;
+      if (allowedVals.length > 0) {
+        // Use allowed values from allowedValsMap
+        qualInput = createParameterInput(qualName, allowedVals, noCustomInput, qualDft);
+      } else {
+        // Check for SpcVal in the qualifier itself
+        const qualSpcVal = qual.querySelector("SpcVal");
+        if (qualSpcVal) {
+          qualInput = createVSCodeSelect(qualName, qualSpcVal, qualDft);
+        } else {
+          // Create regular input
+          qualInput = createInputForType(qualType, qualName, qualDft, qualLen);
+          if (qualDft) {
+            qualInput.setAttribute('data-default', qualDft);
+          }
+        }
+      }
+
+      // Set common attributes
+      qualInput.name = qualName;
+      qualInput.id = qualName;
+
+      return qualInput;
+    }
+
+    function createSimpleParameterCombobox(parm, kwd, dft, spcVal, sngVal) {
+      const select = document.createElement("vscode-single-select");
+      select.setAttribute("combobox", "");
+
+      // Set default value as data attribute
+      if (dft) {
+        select.setAttribute('data-default', dft);
+      }
+
+      // ✅ Add SngVal options first (if present)
+      if (sngVal) {
+        const sngValues = sngVal.querySelectorAll("Value");
+        sngValues.forEach(val => {
+          const option = document.createElement("vscode-option");
+          option.value = val.getAttribute("Val");
+          option.textContent = val.getAttribute("Val");
+          option.setAttribute("data-sngval", "true"); // Mark as single value
+
+          // Select default option
+          if (val.getAttribute("Val") === dft) {
+            option.selected = true;
+            select.value = dft;
+          }
+
+          select.appendChild(option);
+        });
+      }
+
+      // ✅ Add SpcVal options (if present)
+      if (spcVal) {
+        const spcValues = spcVal.querySelectorAll("Value");
+        spcValues.forEach(val => {
+          const valText = val.getAttribute("Val");
+
+          // Don't duplicate SngVal entries
+          const existingOption = select.querySelector(`vscode-option[value="${valText}"]`);
+          if (!existingOption) {
+            const option = document.createElement("vscode-option");
+            option.value = valText;
+            option.textContent = valText;
+
+            // Select default option
+            if (valText === dft) {
+              option.selected = true;
+              select.value = dft;
+            }
+
+            select.appendChild(option);
+          }
+        });
+      }
+
+      // ✅ If no default was set and no options exist, add empty option
+      if (!select.value && select.children.length === 0) {
+        const emptyOption = document.createElement("vscode-option");
+        emptyOption.value = "";
+        emptyOption.textContent = "";
+        select.appendChild(emptyOption);
+      }
+
+      return select;
+    }
+
+    function renderSimpleParameter(parm, kwd, container, dft, required, instanceId) {
+      console.log(`[clPrompter] renderSimpleParameter: ${kwd}, default: ${dft}`);
+
+      try {
+        const allowedVals = allowedValsMap[kwd] || [];
+        const spcVal = parm.querySelector("SpcVal");
+        const sngVal = parm.querySelector("SngVal");
+        const isRestricted = parm.getAttribute("Rstd") === "YES";
+
+        console.log(`[clPrompter] ${kwd} - allowedVals: ${allowedVals.length}, spcVal: ${!!spcVal}, sngVal: ${!!sngVal}`);
+
+        let input;
+
+        if (allowedVals.length > 0) {
+          console.log(`[clPrompter] ${kwd} - Using allowedValsMap`);
+          input = createParameterInput(kwd, allowedVals, false, dft);
+        } else if (spcVal || sngVal || isRestricted) {
+          console.log(`[clPrompter] ${kwd} - Creating combobox from XML`);
+          input = createSimpleParameterCombobox(parm, kwd, dft, spcVal, sngVal);
+        } else {
+          console.log(`[clPrompter] ${kwd} - Creating regular text input`);
+          const parmType = parm.getAttribute("Type") || "CHAR";
+          const parmLen = parm.getAttribute("Len") || "";
+          console.log(`[clPrompter] ${kwd} - About to call createInputForType with type: ${parmType}`);
+          input = createInputForType(parmType, kwd, dft, parmLen);
+        }
+
+        input.id = instanceId;
+        input.name = kwd;
+
+        if (required) {
+          input.required = true;
+        }
+
+        console.log(`[clPrompter] About to append input for ${kwd} to container`);
+        container.appendChild(input);
+        console.log(`[clPrompter] Successfully appended input for ${kwd}`);
+
+      } catch (error) {
+        console.error(`[clPrompter] Error in renderSimpleParameter for ${kwd}:`, error);
+        // Create a fallback input
+        const fallbackInput = document.createElement("input");
+        fallbackInput.type = "text";
+        fallbackInput.name = kwd;
+        fallbackInput.id = instanceId;
+        container.appendChild(fallbackInput);
+      }
+    }
+
+    function addMultiInstanceControls(container, parm, kwd, idx, max, multiGroupDiv) {
+      if (idx === 0) {
+        // Add button for first instance
+        const addBtn = document.createElement("button");
+        addBtn.type = "button";
+        addBtn.className = "add-parm-btn";
+        addBtn.textContent = "+";
+        addBtn.title = "Add another instance";
+        addBtn.onclick = function () {
+          const instances = multiGroupDiv.querySelectorAll(".parm-instance");
+          if (instances.length < max) {
+            const newIdx = instances.length;
+            const newDiv = renderParmInstance(parm, kwd, newIdx, max, multiGroupDiv);
+            multiGroupDiv.appendChild(newDiv);
+          }
+        };
+        container.appendChild(addBtn);
+      } else {
+        // Remove button for subsequent instances
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "remove-parm-btn";
+        removeBtn.textContent = "-";
+        removeBtn.title = "Remove this instance";
+        removeBtn.onclick = function () {
+          container.remove();
+        };
+        container.appendChild(removeBtn);
+      }
+    }
+
+
 
     // --- Main form rendering ---
     function loadForm() {
@@ -909,11 +2643,23 @@
       const form = document.getElementById("clForm");
       form.innerHTML = "";
 
-      parms = Array.from(xmlDoc.getElementsByTagName("Parm"));
-
       parms.forEach(parm => {
         const kwd = parm.getAttribute("Kwd");
+        const type = parm.getAttribute("Type");
+        const constant = parm.getAttribute("Constant"); // Check for Constant attribute
         const max = parseInt(parm.getAttribute("Max") || "1", 10);
+
+        // ✅ Skip parameters with Constant attribute (not Type="CONSTANT")
+        if (constant) {
+          console.log(`[clPrompter] Skipping CONSTANT parameter: ${kwd} (Constant=${constant})`);
+          return; // Skip this parameter
+        }
+
+        // ✅ Skip NULL parameters (Type="Null" from TYPE(*NULL))
+        if (type === "Null") {
+          console.log(`[clPrompter] Skipping NULL parameter: ${kwd} (Type=${type})`);
+          return; // Skip this parameter
+        }
 
         // Multi-instance group
         if (max > 1) {
@@ -931,6 +2677,130 @@
       });
     }
 
+    function validateRestrictedInput(input) {
+      if (input.getAttribute('data-restricted') === 'true') {
+        const options = Array.from(input.querySelectorAll('vscode-option'));
+        const allowedValues = options.map(opt => opt.value);
+
+        if (input.value && !allowedValues.includes(input.value)) {
+          // Show validation error or auto-correct
+          console.warn(`Invalid value: ${input.value}. Allowed: ${allowedValues.join(', ')}`);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function getInputValue(input) {
+      console.log(`[clPrompter] getInputValue - tagName: ${input.tagName}, name: ${input.name}`);
+
+      // Handle VS Code Elements combobox
+      if (input.tagName.toLowerCase() === 'vscode-single-select') {
+        const value = input.value || '';
+        console.log(`[clPrompter] getInputValue - VS Code select value: "${value}"`);
+        return value;
+      }
+
+      // Handle VS Code textfield
+      if (input.tagName.toLowerCase() === 'vscode-textfield') {
+        const value = input.value || '';
+        console.log(`[clPrompter] getInputValue - VS Code textfield value: "${value}"`);
+        return value;
+      }
+
+      // Handle old dropdown with custom input
+      if (input.tagName === 'SELECT' && input.dataset.customInputId) {
+        const value = getDropdownOrCustomValue(input);
+        console.log(`[clPrompter] getInputValue - HTML select+custom value: "${value}"`);
+        return value;
+      }
+
+      // Handle regular inputs
+      const value = input.value || '';
+      console.log(`[clPrompter] getInputValue - Regular input value: "${value}"`);
+      return value;
+    }
+
+    function isUnchangedDefault(input, value) {
+      const defaultValue = input.getAttribute('data-default');
+      if (!defaultValue) return false;
+
+      // Value matches default exactly
+      if (value === defaultValue) return true;
+
+      // ✅ Don't treat empty values as unchanged defaults for QUAL parameters
+      if (input.name && input.name.includes('_QUAL')) {
+        return false; // Never skip QUAL parameters due to defaults
+      }
+
+      // Handle empty value when default exists
+      if (!value && defaultValue) return true;
+
+      return false;
+    }
+    // ✅ Add this function before the submit handler (around line 800-900)
+    function validateRangeInput(input) {
+      const fromValue = input.getAttribute('data-range-from');
+      const toValue = input.getAttribute('data-range-to');
+
+      if (!fromValue || !toValue) return true; // No range to validate
+
+      const value = input.value.trim();
+
+      // Allow empty values (they're optional)
+      if (!value) return true;
+
+      // ✅ Check if value matches any SpcVal or SngVal entries first
+      const inputName = input.name || input.id;
+      const allowedVals = allowedValsMap[inputName] || [];
+
+      // If value matches any allowed special value, it's valid regardless of range
+      if (allowedVals.includes(value)) {
+        console.log(`[clPrompter] Range validation: "${value}" matches allowed special value`);
+        return true;
+      }
+
+      // ✅ Allow any value that starts with * (special values)
+      if (value.startsWith('*')) {
+        console.log(`[clPrompter] Range validation: "${value}" is special value (starts with *)`);
+        return true;
+      }
+
+      // ✅ Allow any value that starts with & (CL variables)
+      if (value.startsWith('&')) {
+        console.log(`[clPrompter] Range validation: "${value}" is CL variable (starts with &)`);
+        return true;
+      }
+
+      // Validate numeric range
+      const numValue = parseInt(value, 10);
+      const fromNum = parseInt(fromValue, 10);
+      const toNum = parseInt(toValue, 10);
+
+      if (isNaN(numValue) || isNaN(fromNum) || isNaN(toNum)) {
+        console.log(`[clPrompter] Range validation: non-numeric values - value: "${value}", range: ${fromValue}-${toValue}`);
+        return true; // Can't validate non-numeric, assume valid
+      }
+
+      const isValid = numValue >= fromNum && numValue <= toNum;
+
+      if (!isValid) {
+        console.log(`[clPrompter] Range validation failed: ${value} not in range ${fromValue}-${toValue}`);
+
+        // Add visual indication
+        input.classList.add('invalid');
+
+        // Show error tooltip
+        showRangeTooltip(input, `❌ Value ${value} is outside valid range ${fromValue}-${toValue}`, 'error');
+
+        return false;
+      } else {
+        // Remove visual indication
+        input.classList.remove('invalid');
+        console.log(`[clPrompter] Range validation passed: ${value} is within range ${fromValue}-${toValue}`);
+        return true;
+      }
+    }
 
     // --- SUBMIT HANDLER ---
     document.getElementById("submitBtn").addEventListener("click", e => {
@@ -968,7 +2838,7 @@
               let input = inst.querySelector(`select[name^="${kwd}_"]`) || inst.querySelector(`select[name="${kwd}_${idx}"]`) || inst.querySelector(`select[name="${kwd}"]`);
               let val = "";
               if (input) {
-                val = getDropdownOrCustomValue(input);
+                val = getInputValue(input);
               } else {
                 input = inst.querySelector(`[name^="${kwd}_"]`) || inst.querySelector(`[name="${kwd}_${idx}"]`) || inst.querySelector(`[name="${kwd}"]`);
                 val = input ? input.value : "";
@@ -995,10 +2865,17 @@
 
         // --- 2. SINGLE-INSTANCE PARAMETERS (not in multi-groups) ---
         const form = document.getElementById('clForm');
-        const inputs = form.querySelectorAll('input, select, textarea');
+        const inputs = form.querySelectorAll('input, select, textarea, vscode-single-select, vscode-textfield, vscode-textarea');
         inputs.forEach(i => {
           if (i.closest('.parm-multi-group')) return;
           if (!i.name) return;
+
+          // ✅ Add debug logging for TOPGMQ inputs
+          if (i.name.includes('TOPGMQ')) {
+            console.log(`[clPrompter] Submit - TOPGMQ input: name="${i.name}", value="${i.value}", tagName=${i.tagName}`);
+          }
+
+
           let parmType = "CHAR";
           let parmElem = null;
           for (let p = 0; p < parms.length; p++) {
@@ -1009,62 +2886,117 @@
             }
           }
           if (!parmElem) return;
+
           const parmKwd = parmElem.getAttribute("Kwd");
           if (parmElem.hasAttribute("Type")) parmType = parmElem.getAttribute("Type").toUpperCase();
-          let val = i.value;
-          if (i.tagName === "SELECT" && i.dataset.customInputId) {
-            val = getDropdownOrCustomValue(i);
+
+          let val = getInputValue(i);
+
+          console.log(`[clPrompter] Submit - Processing ${i.name}, value: "${val}", tagName: ${i.tagName}`);
+
+          // ✅ Skip if value is unchanged default
+          if (isUnchangedDefault(i, val)) {
+            console.log(`[clPrompter] Skipping ${i.name} - unchanged default: ${val}`);
+            return;
           }
-          const qualMatch = i.name.match(/^(.+?)_(.+)$/);
+
+          const qualMatch = i.name.match(/^(.+?)_QUAL(\d+)$/);
           if (qualMatch) {
             const parmName = qualMatch[1];
-            const qualName = qualMatch[2];
+            const qualIndex = parseInt(qualMatch[2], 10);
             if (!qualGroups[parmName]) qualGroups[parmName] = [];
-            qualGroups[parmName].push({ qual: qualName, value: val });
+            qualGroups[parmName].push({ qual: `QUAL${qualIndex}`, value: val, index: qualIndex });
+            console.log(`[clPrompter] Submit - Added QUAL: ${parmName} QUAL${qualIndex} = "${val}" (index: ${qualIndex})`);
+            console.log(`[clPrompter] Submit - Current qualGroups[${parmName}]:`, qualGroups[parmName]);
             return;
           }
+
           if (i.name.match(/_ELEM\d+$/)) {
-            values[i.name] = val;
+            // ✅ Don't store ELEM values with unchanged defaults
+            if (val !== "" && val !== "''" && val !== '""') {
+              values[i.name] = val;
+            }
             return;
           }
-          let dft = "";
-          if (parmElem && parmElem.hasAttribute("Dft")) dft = parmElem.getAttribute("Dft");
+
           const wasInOriginal = originalParamMap.hasOwnProperty(parmKwd);
-          if (
-            (val !== "" && val !== dft && val !== "''" && val !== '""')
-          ) {
+          if (val !== "" && val !== "''" && val !== '""') {
             values[parmKwd] = val;
           } else if (wasInOriginal) {
             values[parmKwd] = originalParamMap[parmKwd];
           }
         });
 
+
         // --- 3. ELEM PARAMETER ASSEMBLY (single instance) ---
         for (let i = 0; i < parms.length; i++) {
           const parm = parms[i];
           const kwd = parm.getAttribute("Kwd");
           if ((parm.getAttribute("Type") || "").toUpperCase() === "ELEM" && !document.querySelector(`.parm-multi-group[data-kwd="${kwd}"]`)) {
+
+            // CHECK: First check if SngVal is selected
+            const sngValInput = document.querySelector(`[name="${kwd}_SNGVAL"]`);
+            if (sngValInput && sngValInput.value) {
+              const selectedOption = sngValInput.selectedOptions[0];
+              if (selectedOption && selectedOption.getAttribute("data-sngval") === "true") {
+                // ✅ Check if SngVal is unchanged default
+                if (!isUnchangedDefault(sngValInput, sngValInput.value)) {
+                  values[kwd] = [sngValInput.value];
+                }
+                continue;
+              }
+            }
+
+            // No SngVal selected - process ELEM values normally
             const elems = parm.getElementsByTagName("Elem");
-            let elemVals = [];
+            let hasNonDefaultValues = false;
+
+            // ✅ Process each ELEM element
             for (let e = 0; e < elems.length; e++) {
               const elemName = `${kwd}_ELEM${e}`;
-              const elemNameWithIdx = `${kwd}_ELEM${e}_0`;
-              const input = document.querySelector(`[name="${elemName}"]`) || document.querySelector(`[name="${elemNameWithIdx}"]`);
-              let val = input ? input.value : "";
-              if (val === "" || val === undefined || val === null || val === "*N") continue;
-              const elemType = (elems[e].getAttribute("Type") || "").toUpperCase();
-              elemVals.push(val);
+              const elem = elems[e];
+
+              // ✅ Handle nested ELEM (ELEM within ELEM)
+              if (elem.getAttribute("Type") === "ELEM") {
+                console.log(`[clPrompter] Processing nested ELEM: ${elemName}`);
+                const subElems = elem.getElementsByTagName("Elem");
+
+                for (let se = 0; se < subElems.length; se++) {
+                  const subElemName = `${elemName}_${se}`;  // ✅ Use correct naming pattern
+                  const subInput = document.querySelector(`[name="${subElemName}"]`);
+                  if (subInput) {
+                    let subVal = getInputValue(subInput);
+                    if (subVal && subVal.trim() !== "" && !isUnchangedDefault(subInput, subVal)) {
+                      values[subElemName] = subVal;
+                      hasNonDefaultValues = true;
+                      console.log(`[clPrompter] Added nested ELEM value: ${subElemName} = "${subVal}"`);
+                    }
+                  }
+                }
+              } else {
+                // ✅ Regular ELEM processing
+                const input = document.querySelector(`[name="${elemName}"]`);
+                if (input) {
+                  let val = getInputValue(input);
+                  // ✅ Special case: Always include ELEM0 even if it's a default
+                  const isFirstElement = elemName.endsWith('_ELEM0');
+
+                  if (val && val.trim() !== "" && (!isUnchangedDefault(input, val) || isFirstElement)) {
+                    values[elemName] = val;
+                    hasNonDefaultValues = true;
+                    console.log(`[clPrompter] Added regular ELEM value: ${elemName} = "${val}"`);
+                  }
+                }
+              }
             }
-            const filtered = elemVals
-              .filter(v => v !== "*N" && v.trim() !== "" && v !== "''");
-            if (filtered.length > 0) {
-              values[kwd] = filtered; // <-- Send as array, not joined string
-            } else if (originalParamMap.hasOwnProperty(kwd)) {
+
+            // ✅ If no non-default values found, use original values
+            if (!hasNonDefaultValues && originalParamMap.hasOwnProperty(kwd)) {
               let orig = originalParamMap[kwd];
               if (Array.isArray(orig)) {
                 values[kwd] = orig;
               } else if (typeof orig === "string") {
-                values[kwd] = orig.trim().split(/\s+/); // <-- Split to array
+                values[kwd] = orig.trim().split(/\s+/);
               } else {
                 values[kwd] = [String(orig)];
               }
@@ -1076,11 +3008,16 @@
         for (const parmName in qualGroups) {
           const parm = Array.from(parms).find(p => p.getAttribute("Kwd") === parmName);
           if (!parm || !parm.getElementsByTagName("Qual").length) continue;
+
+          // ✅ Sort by index (QUAL0, QUAL1, QUAL2) - no reverse needed
           const parts = qualGroups[parmName]
-            .sort((a, b) => a.qual.localeCompare(b.qual))
+            .sort((a, b) => a.index - b.index)  // Sort by numeric index
             .reverse()
             .map(q => q.value)
             .filter(val => val !== "");
+
+          console.log(`[clPrompter] Submit - Assembled QUAL ${parmName}:`, parts);
+
           if (parts.length > 0) {
             values[parmName] = parts;
           } else if (originalParamMap.hasOwnProperty(parmName)) {
@@ -1088,7 +3025,44 @@
           }
         }
 
-        // --- 5. FINAL COMMAND ASSEMBLY ---
+        // --- 5. VALIDATE RANGES BEFORE SUBMISSION ---
+        let hasValidationErrors = false;
+        const rangeInputs = form.querySelectorAll('[data-range-from][data-range-to], [data-range-from][data-range-to] *');
+
+        // ✅ Also check for range inputs inside containers
+        const allRangeInputs = [];
+        form.querySelectorAll('*').forEach(element => {
+          if (element.hasAttribute('data-range-from') && element.hasAttribute('data-range-to')) {
+            allRangeInputs.push(element);
+          }
+        });
+
+        console.log(`[clPrompter] Found ${allRangeInputs.length} range inputs for validation`);
+
+        allRangeInputs.forEach(input => {
+          console.log(`[clPrompter] Validating range input: ${input.name}, value: "${input.value}"`);
+          if (!validateRangeInput(input)) {
+            hasValidationErrors = true;
+            console.log(`[clPrompter] Range validation failed for ${input.name}`);
+
+            // Scroll to the first invalid input
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            input.focus();
+          }
+        });
+
+        if (hasValidationErrors) {
+          console.log('[clPrompter] Blocking submission due to range validation errors');
+          // With this:
+          console.error('[clPrompter] Submission blocked due to range validation errors');
+          vscode.postMessage({
+            type: "error",
+            message: "Please correct the invalid range values before submitting."
+          });
+          return; // Stop submission
+        }
+
+        // --- 6. FINAL COMMAND ASSEMBLY --- (renamed from 5)
         let cmdString = cmdName;
         for (const [key, value] of Object.entries(values)) {
           cmdString += ` ${key}(${Array.isArray(value) ? value.join(" ") : value})`;
@@ -1098,9 +3072,7 @@
         if (labelVal) {
           cmdString = `${labelVal.toUpperCase()}: ${cmdString}`;
         }
-        console.log('[clPrompter] Submitting Final cmdName:', cmdName);
-        console.log('[clPrompter] Submitting Final cmdString:', cmdString);
-        console.log('[clPrompter] Submitting Final values:', values);
+        console.log('[clPrompter] Submitting Final values (excluding unchanged defaults):', values);
         vscode.postMessage({ type: "submit", cmdName, values });
       } catch (err) {
         console.error("[clPrompter] Error in submit handler:", err);
@@ -1131,8 +3103,34 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+      console.log("[clPrompter] DOM Content Loaded");
+
+      // ✅ Check ALL VS Code Elements components
+      setTimeout(() => {
+        const availableComponents = [
+          'vscode-single-select',
+          'vscode-textfield',
+          'vscode-textarea',
+          'vscode-button',
+          'vscode-checkbox',
+          'vscode-radio-group',
+          'vscode-radio',
+          'vscode-option',
+          'vscode-divider'
+        ];
+
+        console.log("[clPrompter] VS Code Elements availability:");
+        availableComponents.forEach(component => {
+          const isAvailable = !!customElements.get(component);
+          // console.log(`  ${component}: ${isAvailable}`);
+        });
+
+      }, 100);
+
       vscode.postMessage({ type: 'webviewReady' });
+      console.log('[clPrompter] Sent webviewReady message');
     });
+
   </script>
 </body>
 

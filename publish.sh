@@ -6,10 +6,15 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+# Updating ELEMEMENTS
+npm update @vscode-elements/elements
+# Update all dependencies
+npm update
+npm ins
 # Compile the extension
 npm run compile || exit 1
 
-# Optional: Package (useful for local installs)
+# Package with dependencies
 npx vsce package || exit 1
 
 # Git commit/push

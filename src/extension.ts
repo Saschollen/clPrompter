@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import { DOMParser } from '@xmldom/xmldom';
 
+import { buildAllowedValsMap } from './extractor';
+import { generatePopulationInstructions } from './populator';
+
 import { CodeForIBMi } from "@halcyontech/vscode-ibmi-types";
 export let code4i: CodeForIBMi;
 import { Extension, extensions } from "vscode";
@@ -16,14 +19,14 @@ import {
     ParmMeta
 } from './parseCL';
 
-import { getHtmlForPrompter, parseCLCmd } from './prompter';
+import { getHtmlForPrompter, findCommandRange } from './prompter';
 import { buildAPI2PartName } from './QlgPathName';
 import { getCMDXML } from './getcmdxml';
 
 let baseExtension: Extension<CodeForIBMi> | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-vscode.window.showInformationMessage('CL Prompter activate! [start]');
+
     baseExtension = extensions.getExtension<CodeForIBMi>("halcyontechltd.code-for-ibmi");
     if (baseExtension) {
         if (!baseExtension.isActive) {
@@ -33,10 +36,10 @@ vscode.window.showInformationMessage('CL Prompter activate! [start]');
     } else {
         vscode.window.showErrorMessage("Code for IBM i extension is not installed or not found.");
     }
-    vscode.window.showInformationMessage('CL Prompter activating...');
+    console.log('[clPrompter] activating...');
     context.subscriptions.push(
         vscode.commands.registerCommand('clPrompter.clPrompter', async () => {
-            vscode.window.showInformationMessage('CL Prompter activated!');
+            console.log('CL Prompter activated!');
             const config = vscode.workspace.getConfiguration('clPrompter');
             if (!config.get('enableF4Key')) {
                 vscode.window.showInformationMessage('Fn key for CL Prompter is disabled in settings.');
@@ -45,7 +48,7 @@ vscode.window.showInformationMessage('CL Prompter activate! [start]');
             await ClPromptPanel.createOrShow(context.extensionUri);
         })
     );
-    vscode.window.showInformationMessage('CL Prompter activate [end]');
+    console.log('CL Prompter activate [end]');
 }
 
 
@@ -58,18 +61,46 @@ export class ClPromptPanel {
     private _selection: vscode.Selection | undefined;
     private _documentUri: vscode.Uri | undefined;
 
+    // ✅ Added method to reset webview state
+    public resetWebviewState() {
+        console.log('[clPrompter] Resetting webview state');
 
+        // ✅ Check if panel exists and use try-catch for webview access
+        if (this._panel) {
+            try {
+                this._panel.webview.postMessage({ type: 'reset' });
+            } catch (error) {
+                console.warn('[clPrompter] Could not send reset message - webview may be disposed:', error);
+            }
+        } else {
+            console.warn('[clPrompter] Cannot reset webview state - panel is null');
+        }
+    }
+
+    // ✅ Update createOrShow method around line 85
     public static async createOrShow(extensionUri: vscode.Uri): Promise<void> {
         const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
 
         let fullCmd = '';
+        let commandRange: { startLine: number; endLine: number } | undefined;
+
         const editor = vscode.window.activeTextEditor;
         if (editor) {
             const allLines = Array.from({ length: editor.document.lineCount }, (_, i) =>
                 editor.document.lineAt(i).text
             );
             const currentLine = editor.selection.active.line;
-            fullCmd = extractFullCLCmd(allLines, currentLine);
+
+            // ✅ Use extractFullCLCmd for the command string
+            const cmdResult = extractFullCLCmd(allLines, currentLine);
+            fullCmd = cmdResult.command;
+
+            // ✅ Use findCommandRange for the line range (could also use cmdResult.startLine/endLine)
+            commandRange = findCommandRange(allLines, currentLine);
+
+            // ✅ Optional: Verify both methods agree on the range
+            console.log(`[clPrompter] Command range: ${commandRange.startLine}-${commandRange.endLine}`);
+            console.log(`[clPrompter] Extract result: ${cmdResult.startLine}-${cmdResult.endLine}`);
         }
 
         let cmdName = extractCmdName(fullCmd);
@@ -85,16 +116,17 @@ export class ClPromptPanel {
         console.log("[clPrompter] <XML> ", xml);
         console.log("[clPrompter] </XML>");
 
-        const selection = editor
+        // ✅ Create selection that spans the entire command range
+        const selection = editor && commandRange
             ? new vscode.Selection(
-                editor.selection.active.line, 0,
-                editor.selection.active.line, editor.document.lineAt(editor.selection.active.line).text.length
+                commandRange.startLine, 0,
+                commandRange.endLine, editor.document.lineAt(commandRange.endLine).text.length
             )
             : undefined;
 
         if (ClPromptPanel.currentPanel) {
             ClPromptPanel.currentPanel._panel.reveal(column);
-            await ClPromptPanel.currentPanel.setXML(cmdName, xml, editor, selection); // Use `await` to handle the asynchronous `setXML`
+            await ClPromptPanel.currentPanel.setXML(cmdName, xml, editor, selection);
         } else {
             const panel = vscode.window.createWebviewPanel(
                 'clPrompter',
@@ -107,7 +139,6 @@ export class ClPromptPanel {
             );
             ClPromptPanel.currentPanel = new ClPromptPanel(
                 panel, extensionUri, cmdName, cmdLabel, xml, editor, selection, fullCmd);
-
         }
     }
 
@@ -115,6 +146,7 @@ export class ClPromptPanel {
     private _cmdLabel: string;
     private _xml: string;
     private _parmMetas: ParmMeta[] = [];
+    private _paramMap: any = [];
     private _presentParms: Set<string> = new Set();
 
     constructor(
@@ -143,20 +175,51 @@ export class ClPromptPanel {
             // 1. Extract parameter metadata from XML
             this._parmMetas = extractParmMetas(xml);
             // 2. Parse the command string into a parameter map
-            const paramMap = parseCLParms(fullCmd, this._parmMetas);
+            this._paramMap = parseCLParms(fullCmd, this._parmMetas);
             // 3. Get list of pre-prompt keywords already on the command
-            this._presentParms = new Set(Object.keys(paramMap));
+            this._presentParms = new Set(Object.keys(this._paramMap));
 
-            console.log('[clPrompter] Parameter Map:', paramMap);
+            console.log('[clPrompter] Parameter Map:', this._paramMap);
 
             panel.webview.onDidReceiveMessage(message => {
                 if (message.type === 'webviewReady') {
-                    console.log('[clPrompter] Sending formXml and populateForm messages to webview');
-                    panel.webview.postMessage({ type: 'formXml', xml }); // send XML to render the form
-                    panel.webview.postMessage({ type: 'populateForm', paramMap }); // send values to populate
-                    panel.webview.postMessage({ type: "setLabel", value: cmdLabel }); // send label
+                    console.log('[clPrompter] Sending processed data to webview');
+
+                    // ✅ Process XML in TypeScript instead of JavaScript
+                    const allowedValsMap = buildAllowedValsMap(xml);
+
+                    // Send processed data instead of raw XML
+                    panel.webview.postMessage({
+                        type: 'formData',
+                        xml, // Still send XML for other processing
+                        allowedValsMap,
+                        cmdName
+                    });
+
+                    // ✅ Generate population instructions if we have parameter data
+                    // ✅ Add this in extension.ts around line 207
+                    if (this._paramMap) {
+                        const populationInstructions = generatePopulationInstructions(
+                            this._paramMap,
+                            xml,
+                            { debugMode: true }
+                        );
+
+                        // ✅ ADD DEBUGGING HERE
+                        console.log('[clPrompter] Generated population instructions:', populationInstructions);
+                        console.log('[clPrompter] Original paramMap:', this._paramMap);
+                        console.log('[clPrompter] Instructions keys:', Object.keys(populationInstructions || {}));
+
+                        panel.webview.postMessage({
+                            type: 'populateForm',
+                            instructions: populationInstructions
+                        });
+                    }
+
+                    panel.webview.postMessage({ type: "setLabel", label: cmdLabel });
                 }
             });
+
         }
         this.getHtmlForPrompter(this._panel.webview, this._cmdName, this._xml)
             .then(html => {
@@ -166,9 +229,20 @@ export class ClPromptPanel {
                 console.error('[clPrompter] Error generating HTML:', err);
             });
 
+        // ✅ Fix around line 245 in constructor
         this._panel.onDidDispose(() => {
+            console.log('[clPrompter] Panel disposed');
+
+            // ✅ DON'T call this.dispose() here - it creates recursion
+            // ✅ Just clean up the static reference and disposables
             ClPromptPanel.currentPanel = undefined;
-            this.dispose();
+
+            while (this._disposables.length) {
+                const disposable = this._disposables.pop();
+                if (disposable) {
+                    disposable.dispose();
+                }
+            }
         }, null, this._disposables);
 
         // ...inside the ClPromptPanel class constructor...
@@ -176,12 +250,32 @@ export class ClPromptPanel {
             message => {
                 switch (message.type) {
                     case 'submit': {
-                        console.log('[submit] this._cmdName:', this._cmdName); // Debug log for cmdName
-                        console.log('[submit] Received cmdName:', message.cmdName); // Debug log for cmdName from webview
-                        // console.log('[submit] Received cmdString:', message.cmdString); // Debug log for cmdString from webview
-                        console.log('[submit] message.values:', message.values); // Debug log for values
-                        const defaults = extractDefaultsFromXML(this._xml);
+
+                        console.log('[submit] this._cmdName:', this._cmdName);
+                        console.log('[submit] Received cmdName:', message.cmdName);
+                        console.log('[submit] message.values:', message.values);
+                        console.log('[submit] Raw message.values:');
+                        Object.keys(message.values).forEach(key => {
+                            console.log(`  ${key}: "${message.values[key]}"`);
+                        });
+                        // Check specifically for TOPGMQ patterns
+                        const topgmqKeys = Object.keys(message.values).filter(k => k.startsWith('TOPGMQ'));
+                        console.log('[submit] TOPGMQ keys found:', topgmqKeys);
+
+                        // ✅ Add debugging for nested ELEM detection
                         const { allowedValsMap, parmTypeMap } = extractAllowedValsAndTypes(this._xml);
+                        console.log('[submit] allowedValsMap keys:', Object.keys(allowedValsMap));
+                        console.log('[submit] parmTypeMap:', parmTypeMap);
+
+                        // ✅ Check for ELEM parameters specifically
+                        Object.keys(message.values).forEach(key => {
+                            if (key.includes('_ELEM')) {
+                                console.log(`[submit] ELEM parameter ${key}:`, message.values[key]);
+                                console.log(`[submit] Type for ${key}:`, parmTypeMap[key]);
+                            }
+                        });
+
+                        const defaults = extractDefaultsFromXML(this._xml);
                         const cmd = buildCLCommand(
                             this._cmdName,
                             message.values,
@@ -192,6 +286,8 @@ export class ClPromptPanel {
                             this._presentParms,
                             undefined
                         );
+
+                        console.log('[submit] Generated command:', cmd);
 
                         if (this._documentUri && this._selection) {
                             vscode.workspace.openTextDocument(this._documentUri).then(doc => {
@@ -222,7 +318,7 @@ export class ClPromptPanel {
                     }
                     case 'loadForm': {
                         this._panel.webview.postMessage({ type: 'formXml', xml: this._xml, cmdName: this._cmdName });
-                        this._panel.webview.postMessage({ type: "setLabel", value: this._cmdLabel });
+                        this._panel.webview.postMessage({ type: "setLabel", label: this._cmdLabel });
                         break;
                     }
                 }
@@ -232,24 +328,40 @@ export class ClPromptPanel {
         );
     }
 
+    // ✅ Update setXML to handle multi-line commands
     public async setXML(cmdName: string, xml: string, editor?: vscode.TextEditor, selection?: vscode.Selection) {
+        console.log('[clPrompter] setXML called - resetting state');
+        this.resetWebviewState();
+        console.log('[clPrompter] setXML finished resetting state');
+
         this._cmdName = cmdName;
         this._xml = xml;
         this._editor = editor;
         this._selection = selection;
+
+        // ✅ Update document URI to current editor
+        this._documentUri = editor?.document.uri;
+
         const html = await this.getHtmlForPrompter(this._panel.webview, this._cmdName, this._xml);
         this._panel.webview.html = html;
     }
 
-    // ...rest of your code...
 
-
+    // ✅ Fix the dispose method around line 290
     public dispose() {
+        console.log('[clPrompter] Disposing ClPromptPanel');
+
+        // ✅ Clear the current panel reference BEFORE disposing
+        ClPromptPanel.currentPanel = undefined;
+
+        // ✅ Dispose of the panel LAST
         this._panel.dispose();
+
+        // ✅ Clean up disposables after panel is disposed
         while (this._disposables.length) {
-            const d = this._disposables.pop();
-            if (d) {
-                d.dispose();
+            const disposable = this._disposables.pop();
+            if (disposable) {
+                disposable.dispose();
             }
         }
     }
@@ -258,7 +370,7 @@ export class ClPromptPanel {
         const nonce = getNonce();
         const cmdName = buildAPI2PartName(cmdString);
 
-        const prompter = await getHtmlForPrompter(webview, cmdName.toString(), xml, nonce);
+        const prompter = await getHtmlForPrompter(webview, this._extensionUri, cmdName.toString(), xml, nonce);
         // console.log("[clPrompter] HTML generated for Prompter: ", prompter);
         return prompter;
     }

@@ -1,8 +1,12 @@
 {
   "name": "clprompter",
   "displayName": "Bob Cozzi's CL Prompter for IBM i",
-  "description": "Bob Cozzi's IBM i CL Prompter extension for vscode-for-ibmi",
-  "version": "0.0.9",
+  "description": "Bob Cozzi's CL Prompter for IBM i CL commands",
+  "version": "0.0.10",
+  "author": {
+    "name": "Bob Cozzi",
+    "url": "https://github.com/bobcozzi"
+  },
   "publisher": "CozziResearch",
   "icon": "media/clPrompter.png",
   "extensionKind": [
@@ -14,6 +18,10 @@
     "type": "git",
     "url": "https://github.com/bobcozzi/clPrompter.git"
   },
+  "bugs": {
+    "url": "https://github.com/bobcozzi/clprompter/issues"
+  },
+  "homepage": "https://github.com/bobcozzi/clprompter#readme",
   "main": "./out/extension.js",
   "engines": {
     "vscode": "^1.74.0"
@@ -39,11 +47,12 @@
       }
     ],
     "configuration": {
+      "title": "CL Prompter for IBM i",
       "properties": {
         "clPrompter.enableF4Key": {
           "type": "boolean",
           "default": true,
-          "description": "Enable F4 key for CL Prompter"
+          "description": "Enable F4=Prompt for CL commands"
         }
       }
     },
@@ -66,10 +75,13 @@
   "devDependencies": {
     "@types/node": "^22.15.30",
     "@types/vscode": "^1.73.0",
+    "@types/xmldom": "^0.1.34",
     "typescript": "^5.8.2"
   },
   "dependencies": {
     "@halcyontech/vscode-ibmi-types": "^2.16.0",
+    "@vscode-elements/elements": "^1.16.1",
+    "@vscode/webview-ui-toolkit": "^1.4.0",
     "@xmldom/xmldom": "^0.9.8",
     "xml2js": "^0.6.2",
     "xmldom": "^0.6.0"

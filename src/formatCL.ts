@@ -12,6 +12,106 @@ interface FormatOptions {
   indcont: number;
 }
 
+// ✅ Update groupNestedElems to handle numeric pattern
+// ✅ Fix groupNestedElems to preserve ALL non-ELEM parameters
+function groupNestedElems(values: Record<string, any>, parmTypeMap: ParmTypeMap): { grouped: Record<string, any>, updatedTypeMap: ParmTypeMap } {
+  const grouped: Record<string, any> = {}; // ✅ Start empty
+  const updatedTypeMap: ParmTypeMap = { ...parmTypeMap };
+  const processed = new Set<string>();
+
+  // ✅ FIRST: Copy all regular parameters (non-ELEM pattern keys)
+  for (const [key, value] of Object.entries(values)) {
+    // ✅ Support both simple and nested ELEM patterns
+    const isSimpleElem = key.match(/^(.+)_ELEM\d+$/);        // LOG_ELEM0, LOG_ELEM1
+    const isNestedElem = key.match(/^(.+)_ELEM(\d+)_(\d+)(?:_(\d+))?$/); // TOPGMQ_ELEM1_0
+
+    if (!isSimpleElem && !isNestedElem) {
+      // ✅ This is a regular parameter - preserve it
+      grouped[key] = value;
+      console.log(`[groupNestedElems] Preserved regular parameter: ${key}`, value);
+    }
+  }
+
+  // Find all ELEM parameters with both simple and nested patterns
+  const elemParams = new Set<string>();
+  for (const key of Object.keys(values)) {
+    // ✅ Support both simple and nested ELEM patterns
+    const simpleElemMatch = key.match(/^(.+)_ELEM\d+$/);           // LOG_ELEM0 -> LOG
+    const nestedElemMatch = key.match(/^(.+)_ELEM(\d+)_(\d+)(?:_(\d+))?$/); // TOPGMQ_ELEM1_0 -> TOPGMQ
+
+    if (simpleElemMatch) {
+      elemParams.add(simpleElemMatch[1]); // Base parameter name (LOG)
+    } else if (nestedElemMatch) {
+      elemParams.add(nestedElemMatch[1]); // Base parameter name (TOPGMQ)
+    }
+  }
+
+  // ✅ SECOND: Process ELEM parameters and create grouped structures
+  for (const baseParam of elemParams) {
+    const elemValues: (string | string[])[] = [];
+    let elemIndex = 0;
+
+    // Collect all ELEM values for this parameter
+    // Collect all ELEM values for this parameter
+    while (true) {
+      // ✅ FIRST: Check for simple ELEM pattern: LOG_ELEM0, LOG_ELEM1, LOG_ELEM2
+      const simpleElemKey = `${baseParam}_ELEM${elemIndex}`;
+      const nestedSimpleKey = `${baseParam}_ELEM${elemIndex}_0`;
+
+      if (values[simpleElemKey] !== undefined) {
+        // Simple ELEM value: LOG_ELEM0, LOG_ELEM1, LOG_ELEM2
+        elemValues.push(values[simpleElemKey]);
+        processed.add(simpleElemKey);
+
+      } else if (values[nestedSimpleKey] !== undefined) {
+        // This ELEM has nested values - collect them as a sub-group
+        const subValues: string[] = [];
+        let subIndex = 0;
+
+        while (true) {
+          const subKey = `${baseParam}_ELEM${elemIndex}_${subIndex}`;
+          if (values[subKey] !== undefined) {
+            subValues.push(values[subKey]);
+            processed.add(subKey);
+            subIndex++;
+          } else {
+            break;
+          }
+        }
+
+        if (subValues.length > 0) {
+          // Multiple values - treat as sub-group
+          elemValues.push(subValues);
+        }
+
+      } else if (values[nestedSimpleKey] !== undefined) {
+        // This ELEM is a simple value in nested format
+        elemValues.push(values[nestedSimpleKey]);
+        processed.add(nestedSimpleKey);
+
+      } else {
+        // No more ELEM values
+        break;
+      }
+
+      elemIndex++;
+    }
+
+    // Set the grouped structure for ELEM parameters
+    if (elemValues.length > 0) {
+      grouped[baseParam] = elemValues;
+      updatedTypeMap[baseParam] = 'ELEM';
+      console.log(`[groupNestedElems] Grouped ELEM ${baseParam}:`, elemValues);
+    }
+  }
+
+  console.log('[groupNestedElems] Original values:', Object.keys(values));
+  console.log('[groupNestedElems] Final grouped values:', Object.keys(grouped));
+
+  return { grouped, updatedTypeMap };
+}
+
+// ✅ Fixed buildCLCommand to handle arrays for ANY parameter type
 export function buildCLCommand(
   cmdName: string,
   values: Record<string, any>,
@@ -30,16 +130,37 @@ export function buildCLCommand(
     cmd = cmd.substring(LIBL.length);
   }
 
-  // Track which parameters have already been handled (by qualGroupsMap)
+  // ✅ Check if this command actually has ELEM pattern keys
+  // ✅ Support both simple and nested ELEM patterns
+  const hasElemPatterns = Object.keys(values).some(key =>
+    key.match(/^(.+)_ELEM\d+$/) ||                           // LOG_ELEM0, LOG_ELEM1 (simple)
+    key.match(/^(.+)_ELEM(\d+)_(\d+)(?:_(\d+))?$/)          // TOPGMQ_ELEM1_0 (nested)
+  );
+
+  // ✅ Only process ELEM grouping if there are ELEM patterns
+  let groupedValues: Record<string, any>;
+  let updatedTypeMap: ParmTypeMap;
+
+  if (hasElemPatterns) {
+    console.log('[buildCLCommand] ELEM patterns detected, calling groupNestedElems...');
+    const result = groupNestedElems(values, parmTypeMap);
+    groupedValues = result.grouped;
+    updatedTypeMap = result.updatedTypeMap;
+  } else {
+    console.log('[buildCLCommand] No ELEM patterns, using values directly');
+    groupedValues = values; // ✅ Use original values directly
+    updatedTypeMap = parmTypeMap;
+  }
+
+  // Track which parameters have already been handled
   const handledParms = new Set<string>();
 
-  // Handle QUAL/ELEM grouping if qualGroupsMap is provided (optional, for advanced use)
+  // Handle QUAL/ELEM grouping if qualGroupsMap is provided
   if (qualGroupsMap) {
     for (const [kwd, qualInstances] of Object.entries(qualGroupsMap)) {
       if (!qualInstances.length) continue;
       const allowedVals = allowedValsMap[kwd] || [];
-      const parmType = parmTypeMap[kwd] || "";
-      // Each instance is an array of QUAL/ELEM parts
+      const parmType = updatedTypeMap[kwd] || "";
       const qualStrings = qualInstances.map(instanceArr =>
         instanceArr
           .map((v, idx) => quoteIfNeeded(v, allowedVals, parmType))
@@ -53,9 +174,10 @@ export function buildCLCommand(
   // Output parameters in the order defined by parmMetas
   for (const meta of parmMetas) {
     const key = meta.Kwd;
-    if (handledParms.has(key)) continue; // Already handled by qualGroupsMap
+    if (handledParms.has(key)) continue;
 
-    const value = values[key];
+    // ✅ Use grouped values instead of raw values
+    const value = groupedValues[key];
     if (
       value === undefined ||
       value === null ||
@@ -66,109 +188,63 @@ export function buildCLCommand(
     }
 
     const allowedVals = allowedValsMap[key] || [];
-    const parmType = parmTypeMap[key] || "";
+    const parmType = updatedTypeMap[key] || "";
 
-    // QUAL parameter (array of parts)
-    if (meta.Quals && meta.Quals.length > 0 && Array.isArray(value)) {
-      // Multi-instance QUAL: array of arrays
+    console.log(`[buildCLCommand] Processing ${key}: value=${JSON.stringify(value)}, type=${parmType}`);
+
+    // ✅ NEW: Check if parameter has ELEM children (complex ELEM structure)
+    const hasElemChildren = meta.Elems && meta.Elems.length > 0;
+
+    // ✅ NEW: Check if parameter has QUAL children (qualified parameter)
+    const hasQualChildren = meta.Quals && meta.Quals.length > 0;
+
+    if (hasElemChildren && Array.isArray(value)) {
+      // ✅ ELEM parameter with complex structure
+      if (parmType === 'ELEM') {
+        // Mixed ELEM parameters (simple values and sub-groups)
+        const elemParts: string[] = [];
+        for (const elemValue of value) {
+          if (Array.isArray(elemValue)) {
+            // Sub-group: wrap in parentheses after quoting individual values
+            const quotedSubValues = elemValue.map(v => quoteIfNeeded(v, allowedVals, parmType));
+            elemParts.push(`(${quotedSubValues.join(' ')})`);
+          } else {
+            // Simple value: quote if needed
+            elemParts.push(quoteIfNeeded(elemValue, allowedVals, parmType));
+          }
+        }
+        cmd += ` ${key}(${elemParts.join(' ')})`;
+        console.log(`[buildCLCommand] Added mixed ELEM: ${key}(${elemParts.join(' ')})`);
+      } else {
+        // ✅ Regular ELEM parameter (array of parts)
+        cmd += ` ${key}(${value.map((vArr: any) =>
+          Array.isArray(vArr)
+            ? vArr.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join(' ')
+            : quoteIfNeeded(vArr, allowedVals, parmType)
+        ).join(' ')})`;
+      }
+    } else if (hasQualChildren && Array.isArray(value)) {
+      // ✅ QUAL parameter (array of parts)
       if (Array.isArray(value[0])) {
         cmd += ` ${key}(${value.map((vArr: any) =>
           vArr.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join('/')
         ).join(' ')})`;
       } else {
-        // Single instance QUAL: array of strings
         cmd += ` ${key}(${value.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join('/')})`;
       }
-    }
-    // ELEM parameter (array of parts, joined by space)
-    else if (meta.Elems && meta.Elems.length > 0 && Array.isArray(value)) {
-      cmd += ` ${key}(${value.map((vArr: any) =>
-        Array.isArray(vArr)
-          ? vArr.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join(' ')
-          : quoteIfNeeded(vArr, allowedVals, parmType)
-      ).join(' ')})`;
-    }
-    // Multi-instance simple
-    else if (Array.isArray(value)) {
+    } else if (Array.isArray(value)) {
+      // ✅ NEW: ANY multi-instance parameter (Max > 1) - regardless of type
       cmd += ` ${key}(${value.map(v => quoteIfNeeded(v, allowedVals, parmType)).join(' ')})`;
-    }
-    // Simple parameter
-    else {
-      cmd += ` ${key}(${quoteIfNeeded(value, allowedVals, parmType)})`;
-    }
-  }
-
-  return cmd;
-}
-
-export function buildCLCommand_xx(
-  cmdName: string,
-  values: Record<string, any>,
-  defaults: Record<string, any>,
-  allowedValsMap: AllowedValsMap,
-  parmTypeMap: ParmTypeMap,
-  parmMetas: ParmMeta[],
-  presentParms?: Set<string>,
-  qualGroupsMap?: Record<string, string[][]> // Optional: for QUAL/ELEM grouping if you have it
-): string {
-  let cmd = cmdName;
-
-  // Remove *LIBL/ from the command name if present
-  const LIBL = '*LIBL/';
-  if (cmd.toUpperCase().startsWith(LIBL)) {
-    cmd = cmd.substring(LIBL.length);
-  }
-
-  // Track which parameters have already been handled (by qualGroupsMap)
-  const handledParms = new Set<string>();
-
-  // Handle QUAL/ELEM grouping if qualGroupsMap is provided (optional, for advanced use)
-  if (qualGroupsMap) {
-    for (const [kwd, qualInstances] of Object.entries(qualGroupsMap)) {
-      if (!qualInstances.length) continue;
-      const allowedVals = allowedValsMap[kwd] || [];
-      const parmType = parmTypeMap[kwd] || "";
-      const qualStrings = qualInstances.map(instanceArr =>
-        instanceArr
-          .slice() // copy to avoid mutating original
-          .reverse()
-          .map((v, idx) => quoteIfNeeded(v, allowedVals, parmType))
-          .join('/')
-      );
-      cmd += ` ${kwd}(${qualStrings.join(' ')})`;
-      handledParms.add(kwd);
-    }
-  }
-
-  // Output parameters in the order defined by parmMetas
-  for (const meta of parmMetas) {
-    const key = meta.Kwd;
-    if (handledParms.has(key)) continue; // Already handled by qualGroupsMap
-
-    const value = values[key];
-    console.log('key:', key, 'value:', value, 'default:', defaults[key], 'present:', presentParms?.has(key));
-    if (
-      value === undefined ||
-      value === null ||
-      value === '' ||
-      (!presentParms?.has(key) && defaults && deepEqual(normalizeValue(value), normalizeValue(defaults[key])))
-    ) {
-      continue;
-    }
-
-    const allowedVals = allowedValsMap[key] || [];
-    const parmType = parmTypeMap[key] || "";
-
-    // Multi-instance (array)
-    if (Array.isArray(value)) {
-      cmd += ` ${key}(${value.map(v => quoteIfNeeded(v, allowedVals, parmType)).join(' ')})`;
+      console.log(`[buildCLCommand] Added multi-instance parameter: ${key}(${value.map(v => quoteIfNeeded(v, allowedVals, parmType)).join(' ')})`);
     } else {
+      // ✅ Simple parameter
       cmd += ` ${key}(${quoteIfNeeded(value, allowedVals, parmType)})`;
     }
   }
 
   return cmd;
 }
+
 
 function normalizeValue(val: any): any {
   if (typeof val === 'string' && val.includes('/')) {
@@ -507,48 +583,53 @@ function writeFormatted(
  * @param currentLine The line number where the cursor is
  * @returns The full CL command as a single string
  */
-export // Utility: Extract the full CL command from the editor, handling + and - continuations.
-  function extractFullCLCmd(allLines: string[], currentLine: number): string {
-  // Step 1: Find the start of the command (walk backwards)
+
+export function extractFullCLCmd(lines: string[], currentLine: number): { command: string; startLine: number; endLine: number } {
   let startLine = currentLine;
+  let endLine = currentLine;
+  let command = '';
+
+  // Find the start of the command (look backward for continuation)
   while (startLine > 0) {
-    const prevLine = allLines[startLine - 1].trimRight();
-    if (!prevLine.endsWith('+') && !prevLine.endsWith('-')) break;
-    startLine--;
-  }
-
-  // Step 2: Collect and join lines, handling continuations
-  let cmd = '';
-  let lineIdx = startLine;
-  let pendingPlus = false;
-  let pendingMinus = false;
-
-  while (lineIdx < allLines.length) {
-    let line = allLines[lineIdx].replace(/\r?\n$/, '');
-    let trimmed = line.trimRight();
-
-    if (pendingPlus) {
-      line = line.replace(/^\s*/, '');
-      pendingPlus = false;
-    }
-    if (pendingMinus) {
-      line = line.trimLeft();
-      pendingMinus = false;
-    }
-
-    if (trimmed.endsWith('+')) {
-      cmd += trimmed.slice(0, -1);
-      pendingPlus = true;
-    } else if (trimmed.endsWith('-')) {
-      cmd += trimmed.slice(0, -1);
-      pendingMinus = true;
+    const prevLine = lines[startLine - 1].trimEnd();
+    if (prevLine.endsWith('+') || prevLine.endsWith('-')) {
+      startLine--;
     } else {
-      cmd += line;
       break;
     }
-    lineIdx++;
   }
 
-  return cmd.trim();
+  // Build the command from startLine forward
+  let lineIndex = startLine;
+  while (lineIndex < lines.length) {
+    const line = lines[lineIndex].trimEnd();
+
+    if (lineIndex === startLine) {
+      // First line - include everything
+      command = line;
+    } else {
+      // Continuation line - remove leading whitespace and continuation character
+      const continuationLine = line.replace(/^\s*[-+]?\s*/, ' ');
+      command += continuationLine;
+    }
+
+    endLine = lineIndex;
+
+    // Check if this line continues
+    if (line.endsWith('+') || line.endsWith('-')) {
+      lineIndex++;
+    } else {
+      break;
+    }
+  }
+
+  // Clean up the command - remove continuation characters
+  command = command.replace(/[+-]\s*$/, '').replace(/[+-]\s+/g, ' ').trim();
+
+  return {
+    command,
+    startLine,
+    endLine
+  };
 }
 
