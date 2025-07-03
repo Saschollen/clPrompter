@@ -791,12 +791,13 @@
           const container = document.createElement('div');
           container.style.position = 'relative';
           container.style.display = 'inline-block';
-          container.style.width = '100%';
+          // container.style.width = '100%';
 
           const textfield = document.createElement('vscode-textfield');
           textfield.name = name;
           textfield.id = name;
-          textfield.style.width = '100%';
+          textfield.className = widthClass;
+          // textfield.style.width = 'auto';
 
 
           if (defaultValue) {
@@ -1625,48 +1626,182 @@
       console.log(`[clPrompter] ===== END populateQualInputs DEBUG =====`);
     }
 
+    // ✅ Valid IBM i CL parameter data types
+    const CL_DATA_TYPES = [
+      'DEC',
+      'LGL',
+      'CHAR',
+      'INT2',
+      'INT4',
+      'UINT2',
+      'UINT4',
+      'NAME',
+      'GENERIC',
+      'VARNAME',
+      'DATE',
+      'TIME',
+      'CMD',
+      'X',
+      'ZEROELEM',
+      'NULL',
+      'CMDSTR',
+      'PNAME',
+      'SNAME',
+      'CNAME'
+    ];
+
+    // ✅ Container/structure types (not actual data types)
+    const CL_CONTAINER_TYPES = [
+      'ELEM',
+      'QUAL'
+    ];
+
+    // ✅ Check if a type is a valid data type
+    function isValidDataType(type) {
+      return CL_DATA_TYPES.includes((type || '').toUpperCase());
+    }
+
+    // ✅ Check if a type is a container type
+    function isContainerType(type) {
+      return CL_CONTAINER_TYPES.includes((type || '').toUpperCase());
+    }
+
+    // ✅ Check if a type needs special handling
+    function getTypeCategory(type) {
+      const upperType = (type || '').toUpperCase();
+
+      if (CL_DATA_TYPES.includes(upperType)) {
+        return 'DATA_TYPE';
+      } else if (CL_CONTAINER_TYPES.includes(upperType)) {
+        return 'CONTAINER';
+      } else {
+        return 'UNKNOWN';
+      }
+    }
+
     function calculateFieldWidth(parm, allowedVals) {
       const type = (parm.getAttribute('Type') || 'CHAR').toUpperCase();
       const lenAttr = parm.getAttribute('Len') || '';
+      const kwd = parm.getAttribute('Kwd') || 'UNKNOWN';
+      const isRestricted = parm.getAttribute('Rstd') === 'YES';
 
-      let effectiveLen = 10; // Default fallback
-
-      // Handle numeric types
-      if (type === 'INT2') {
-        effectiveLen = 6;  // -32768 to 32767
-      } else if (type === 'INT4') {
-        effectiveLen = 11; // -2147483648 to 2147483647
-      } else if (type === 'UINT2') {
-        effectiveLen = 5;  // 0 to 65535
-      } else if (type === 'UINT4') {
-        effectiveLen = 10; // 0 to 4294967295
-      } else if (type === 'DEC') {
-        // Parse "7.2" format - total digits + 1 for decimal point
-        if (lenAttr.includes('.')) {
-          const [totalDigits, decimalPlaces] = lenAttr.split('.').map(s => parseInt(s, 10));
-          effectiveLen = totalDigits + 1; // +1 for decimal point
-          console.log(`[calculateWidth] DEC ${lenAttr}: ${totalDigits} digits + decimal = ${effectiveLen} chars`);
-        } else {
-          effectiveLen = parseInt(lenAttr, 10) || 10;
-        }
-      } else {
-        // CHAR, NAME, CMDSTR, etc. - use declared length
-        // NOTE: May need special handling for *X Len="1" situations
-        effectiveLen = parseInt(lenAttr, 10) || 10;
+      if (isContainerType(type)) {
+        console.log(`[calculateFieldWidth] ${kwd}: Container type ${type}, using default length`);
+        return 40;
       }
 
-      // Find the longest SPCVAL/SNGVAL value
+      let effectiveLen = 10;
+
+      // Handle type-specific base lengths
+      switch (type) {
+        case 'INT2':
+          effectiveLen = 6;
+          break;
+        case 'INT4':
+          effectiveLen = 11;
+          break;
+        case 'UINT2':
+          effectiveLen = 5;
+          break;
+        case 'UINT4':
+          effectiveLen = 10;
+          break;
+        case 'VARNAME':
+          effectiveLen = parseInt(lenAttr, 10) || 11;
+          break;
+        case 'NAME':
+        case 'PNAME':
+        case 'SNAME':
+        case 'CNAME':
+          effectiveLen = parseInt(lenAttr, 10) || 10;
+          break;
+        case 'DATE':
+          effectiveLen = 10;
+          break;
+        case 'TIME':
+          effectiveLen = 8;
+          break;
+        case 'LGL':
+          effectiveLen = 1;
+          break;
+        case 'DEC':
+          if (lenAttr.includes('.')) {
+            const [totalDigits] = lenAttr.split('.').map(s => parseInt(s, 10));
+            effectiveLen = totalDigits + 1;
+          } else {
+            effectiveLen = parseInt(lenAttr, 10) || 10;
+          }
+          break;
+        case 'X':
+          if (lenAttr.includes('.')) {
+            const parts = lenAttr.split('.');
+            if (parts.length >= 3) {
+              const charLen = parseInt(parts[0], 10) || 10;
+              const numDigits = parseInt(parts[1], 10) || 10;
+              const numDecimals = parseInt(parts[2], 10) || 0;
+              const numDisplayLen = numDigits + 1;
+              effectiveLen = Math.max(charLen, numDisplayLen);
+
+              console.log(`[calculateFieldWidth] ${kwd}: Type X - CharLen=${charLen}, NumFormat=${numDigits}.${numDecimals}, DisplayLen=${numDisplayLen}, Using=${effectiveLen}`);
+            } else if (parts.length === 2) {
+              const charLen = parseInt(parts[0], 10) || 10;
+              const numLen = parseInt(parts[1], 10) || 10;
+              effectiveLen = Math.max(charLen, numLen);
+
+              console.log(`[calculateFieldWidth] ${kwd}: Type X - CharLen=${charLen}, NumLen=${numLen}, Using=${effectiveLen}`);
+            } else {
+              effectiveLen = parseInt(parts[0], 10) || 10;
+            }
+          } else {
+            effectiveLen = parseInt(lenAttr, 10) || 10;
+          }
+          break;
+        case 'GENERIC':
+          effectiveLen = parseInt(lenAttr, 10) || 10;
+          break;
+        case 'NULL':
+        case 'ZEROELEM':
+          effectiveLen = 0;
+          break;
+        case 'CMD':
+        case 'CMDSTR':
+          effectiveLen = parseInt(lenAttr, 10) || 2000;
+          break;
+        case 'CHAR':
+        default:
+          effectiveLen = parseInt(lenAttr, 10) || 25;
+          break;
+      }
+
+      // ✅ NEW: Find the longest SPCVAL/SNGVAL value
       let maxSpcValLen = 0;
-      allowedVals.forEach(val => {
-        if (val && val !== '_noCustomInput' && !val.startsWith('_RANGE_')) {
+      if (Array.isArray(allowedVals)) {
+        allowedVals.forEach(val => {
+          if (val && val !== '_noCustomInput' && !val.startsWith('_RANGE_')) {
+            maxSpcValLen = Math.max(maxSpcValLen, val.length);
+          }
+        });
+      }
+
+      // ✅ NEW: For restricted fields, also check SpcVal/SngVal directly from XML
+      const spcVals = parm.querySelectorAll('SpcVal Value, SngVal Value');
+      spcVals.forEach(valElem => {
+        const val = valElem.getAttribute('Val');
+        if (val && val !== '*NULL') {
           maxSpcValLen = Math.max(maxSpcValLen, val.length);
         }
       });
 
-      // Use the larger of: calculated length OR longest SPCVAL
-      const finalLen = Math.max(effectiveLen, maxSpcValLen);
+      // ✅ NEW: If this is a restricted field, prioritize SpcVal lengths over declared length
+      let finalLen;
+      if (isRestricted && maxSpcValLen > 0) {
+        finalLen = Math.max(effectiveLen, maxSpcValLen);
+        console.log(`[calculateFieldWidth] ${kwd}: Restricted field - DeclaredLen=${effectiveLen}, MaxSpcValLen=${maxSpcValLen}, Using=${finalLen}`);
+      } else {
+        finalLen = Math.max(effectiveLen, maxSpcValLen);
+      }
 
-      console.log(`[calculateWidth] ${parm.getAttribute('Kwd')}: Type=${type}, Len=${lenAttr}, Calculated=${effectiveLen}, MaxSpcVal=${maxSpcValLen}, Final=${finalLen}`);
+      console.log(`[calculateFieldWidth] ${kwd}: Type=${type}, Len=${lenAttr}, Rstd=${isRestricted}, Calculated=${effectiveLen}, MaxSpcVal=${maxSpcValLen}, Final=${finalLen}`);
 
       return finalLen;
     }
@@ -1863,86 +1998,330 @@
       console.log(`[clPrompter] createInputForType called: type=${type}, name=${name}, value=${value}, len=${len}`);
 
       try {
-        const input = document.createElement("input");
-        input.type = "text";
+        const upperType = (type || 'CHAR').toUpperCase().replace('*', '');
+        const typeCategory = getTypeCategory(upperType);
+
+        if (typeCategory === 'CONTAINER') {
+          console.error(`[clPrompter] Container type ${upperType} should not reach createInputForType`);
+          return null;
+        }
+
+        if (typeCategory === 'UNKNOWN') {
+          console.warn(`[clPrompter] Unknown type ${upperType}, treating as CHAR`);
+        }
+
+        // ✅ Replace lines 2033-2034 with this simpler fix:
+        let parm = Array.from(parms).find(p => p.getAttribute("Kwd") === name);
+
+        // ✅ For ELEM inputs, find the parent parameter
+        if (!parm && name.includes('_ELEM')) {
+          const parentKwd = name.split('_ELEM')[0];
+          parm = Array.from(parms).find(p => p.getAttribute("Kwd") === parentKwd);
+        }
+
+        const effectiveLen = parm ? calculateFieldWidth(parm, []) : (parseInt(len, 10) || 25);
+
+        const widthClass = getLengthClass(effectiveLen);
+
+        let input;
+        const useVSCodeElements = customElements.get('vscode-textfield') &&
+          customElements.get('vscode-textarea');
+
+        console.log(`[clPrompter] ${name} - Type: ${upperType}, EffectiveLen: ${effectiveLen}, WidthClass: ${widthClass}`);
+
+        // ✅ First, handle all type-specific logic (no textarea creation here)
+        switch (upperType) {
+          case 'DEC':
+          case 'INT2':
+          case 'INT4':
+          case 'UINT2':
+          case 'UINT4':
+            console.log(`[clPrompter] Processing number type: ${upperType}`);
+
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-textfield');
+              input.className = widthClass;
+              input.setAttribute('type', 'number');
+
+              const hasXMLRange = parm && (
+                parm.getAttribute('RangeMinVal') ||
+                parm.getAttribute('RangeMaxVal')
+              );
+
+              if (hasXMLRange) {
+                const minVal = parm.getAttribute('RangeMinVal');
+                const maxVal = parm.getAttribute('RangeMaxVal');
+
+                if (minVal) input.setAttribute('min', minVal);
+                if (maxVal) input.setAttribute('max', maxVal);
+
+                console.log(`[clPrompter] ${name} - Using XML range: ${minVal} to ${maxVal}`);
+              } else {
+                if (upperType === 'INT2') {
+                  input.setAttribute('min', '-32768');
+                  input.setAttribute('max', '32767');
+                } else if (upperType === 'INT4') {
+                  input.setAttribute('min', '-2147483648');
+                  input.setAttribute('max', '2147483647');
+                } else if (upperType === 'UINT2') {
+                  input.setAttribute('min', '0');
+                  input.setAttribute('max', '65535');
+                } else if (upperType === 'UINT4') {
+                  input.setAttribute('min', '0');
+                  input.setAttribute('max', '4294967295');
+                }
+
+                console.log(`[clPrompter] ${name} - Using type constraints for ${upperType}`);
+              }
+
+              if (upperType === 'DEC' && len && len.includes('.')) {
+                const [, decimalPlaces] = len.split('.');
+                const step = parseFloat(`0.${'0'.repeat(parseInt(decimalPlaces) - 1)}1`);
+                input.setAttribute('step', step.toString());
+              }
+            } else {
+              input = document.createElement("input");
+              input.type = "number";
+              input.className = widthClass;
+            }
+            break;
+
+          case 'VARNAME':
+            console.log(`[clPrompter] Processing VARNAME type: ${upperType}`);
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-textfield');
+              input.className = widthClass;
+              input.setAttribute('pattern', '&[A-Z][A-Z0-9]*');
+              input.placeholder = '&VARIABLENAME';
+              input.title = 'CL variable name (must start with &)';
+            } else {
+              input = document.createElement("input");
+              input.type = "text";
+              input.className = widthClass;
+              input.pattern = "&[A-Z][A-Z0-9]*";
+              input.placeholder = "&VARIABLENAME";
+            }
+            break;
+
+          case 'NAME':
+          case 'PNAME':
+          case 'SNAME':
+          case 'CNAME':
+          case 'GENERIC':
+            console.log(`[clPrompter] Processing name type: ${upperType}`);
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-textfield');
+              input.className = widthClass;
+              input.placeholder = 'Name';
+            } else {
+              input = document.createElement("input");
+              input.type = "text";
+              input.className = widthClass;
+            }
+            break;
+
+          case 'DATE':
+            console.log(`[clPrompter] Processing date type: ${upperType}`);
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-textfield');
+              input.setAttribute('type', 'date');
+              input.className = 'input-md';
+            } else {
+              input = document.createElement("input");
+              input.type = "date";
+              input.className = 'input-md';
+            }
+            break;
+
+          case 'TIME':
+            console.log(`[clPrompter] Processing time type: ${upperType}`);
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-textfield');
+              input.setAttribute('type', 'time');
+              input.className = 'input-sm';
+            } else {
+              input = document.createElement("input");
+              input.type = "time";
+              input.className = 'input-sm';
+            }
+            break;
+
+          case 'LGL':
+            console.log(`[clPrompter] Processing logical type: ${upperType}`);
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-single-select');
+              input.className = 'input-xs';
+
+              const opt0 = document.createElement('vscode-option');
+              opt0.value = '0';
+              opt0.textContent = '0 (False)';
+
+              const opt1 = document.createElement('vscode-option');
+              opt1.value = '1';
+              opt1.textContent = '1 (True)';
+
+              input.appendChild(opt0);
+              input.appendChild(opt1);
+            } else {
+              input = document.createElement("input");
+              input.type = "text";
+              input.className = 'input-xs';
+              input.placeholder = "0 or 1";
+            }
+            break;
+
+          case 'X':
+            console.log(`[clPrompter] Processing any-type (X) parameter: ${upperType}`);
+
+            let charLen = 25, numDigits = 10, numDecimals = 0;
+            if (len && len.includes('.')) {
+              const parts = len.split('.');
+              if (parts.length >= 3) {
+                charLen = parseInt(parts[0], 10) || 25;
+                numDigits = parseInt(parts[1], 10) || 10;
+                numDecimals = parseInt(parts[2], 10) || 0;
+              } else if (parts.length === 2) {
+                charLen = parseInt(parts[0], 10) || 25;
+                numDigits = parseInt(parts[1], 10) || 10;
+              }
+            } else if (len) {
+              charLen = parseInt(len, 10) || 25;
+            }
+
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-textfield');
+              input.className = widthClass;
+              input.placeholder = `Text (max ${charLen}) or Number (${numDigits}.${numDecimals})`;
+              input.title = `Accepts character data (max ${charLen} chars) or numeric data (${numDigits} digits, ${numDecimals} decimals)`;
+            } else {
+              input = document.createElement("input");
+              input.type = "text";
+              input.className = widthClass;
+              input.placeholder = `Text or Number`;
+            }
+
+            input.setAttribute('maxlength', charLen.toString());
+            break;
+
+          case 'NULL':
+          case 'ZEROELEM':
+            console.log(`[clPrompter] Processing hidden type: ${upperType}`);
+            input = document.createElement("input");
+            input.type = "hidden";
+            break;
+
+          default:
+            console.log(`[clPrompter] Processing default/CHAR type: ${upperType}`);
+            if (useVSCodeElements) {
+              input = document.createElement('vscode-textfield');
+              input.className = widthClass;
+            } else {
+              input = document.createElement("input");
+              input.type = "text";
+              input.className = widthClass;
+            }
+            break;
+        }
+
+        // ✅ AFTER type processing: Convert to textarea if length exceeds threshold
+        let actualLen = effectiveLen; // Start with calculated width
+
+        // Override with declared length if it's larger and makes sense
+        let declaredLen = parseInt(len, 10);
+        if (!isNaN(declaredLen) && declaredLen > 0) {
+          actualLen = Math.max(actualLen, declaredLen);
+        }
+
+        if (actualLen > 80 && upperType !== 'NULL' && upperType !== 'ZEROELEM' && upperType !== 'LGL') {
+          console.log(`[clPrompter] Converting to textarea due to length: ${actualLen} > 80 for ${name}`);
+          if (useVSCodeElements && customElements.get('vscode-textarea')) {
+            const textarea = document.createElement('vscode-textarea');
+            textarea.className = 'input-full';
+            textarea.style.minHeight = '60px';
+            textarea.rows = Math.min(Math.ceil(actualLen / 80), 5);
+
+            // Copy over any attributes from the original input
+            textarea.name = input.name;
+            textarea.id = input.id;
+            if (input.placeholder) textarea.placeholder = input.placeholder;
+            if (input.title) textarea.title = input.title;
+
+            input = textarea;
+          } else {
+            const textarea = document.createElement("textarea");
+            textarea.className = 'input-full';
+            textarea.style.minHeight = '60px';
+            textarea.rows = Math.min(Math.ceil(actualLen / 80), 5);
+
+            // Copy over any attributes from the original input
+            textarea.name = input.name;
+            textarea.id = input.id;
+            if (input.placeholder) textarea.placeholder = input.placeholder;
+            if (input.title) textarea.title = input.title;
+
+            input = textarea;
+          }
+        }
+
+        // ✅ Set common attributes
         input.name = name;
         input.id = name;
 
-        console.log(`[clPrompter] Created basic input for ${name}`);
-
-        // Set default value
         if (value) {
           input.value = value;
           input.setAttribute('data-default', value);
           console.log(`[clPrompter] Set value for ${name}: ${value}`);
         }
 
-        // Set max length
-        if (len && !isNaN(len)) {
-          input.setAttribute("maxlength", len);
-          console.log(`[clPrompter] Set maxlength for ${name}: ${len}`);
+        if (declaredLen && input.tagName !== 'SELECT') {
+          if (input.tagName.toLowerCase() === 'vscode-textfield' ||
+            input.tagName.toLowerCase() === 'vscode-textarea' ||
+            input.tagName === 'INPUT' ||
+            input.tagName === 'TEXTAREA') {
+            input.setAttribute("maxlength", declaredLen);
+            console.log(`[clPrompter] Set maxlength for ${name}: ${declaredLen}`);
+          }
         }
 
-        console.log(`[clPrompter] About to process switch for type: ${type}`);
+        // ✅ Add VARNAME validation
+        if (input.getAttribute('pattern') === '&[A-Z][A-Z0-9]*') {
+          input.addEventListener('input', function (e) {
+            const value = e.target.value.toUpperCase();
+            if (value && !value.startsWith('&')) {
+              e.target.value = '&' + value;
+            }
+            e.target.value = e.target.value.toUpperCase();
+          });
 
-        switch (type) {
-          case "*DEC":
-          case "*INT2":
-          case "*INT4":
-          case "*UINT2":
-          case "*UINT4":
-            console.log(`[clPrompter] Processing number type: ${type}`);
-            input.type = "number";  // ✅ Don't recreate, just change type
-            break;
-          case "*DATE":
-            console.log(`[clPrompter] Processing date type: ${type}`);
-            input.type = "date";
-            break;
-          case "*TIME":
-            console.log(`[clPrompter] Processing time type: ${type}`);
-            input.type = "time";
-            break;
-          case "*LGL":
-            console.log(`[clPrompter] Processing logical type: ${type}`);
-            // Keep as text input for now to avoid complication
-            input.type = "text";
-            break;
-          case "*NULL":
-            console.log(`[clPrompter] Processing null type: ${type}`);
-            input.type = "hidden";
-            break;
-          case "*CMDSTR":
-          case "*CMD":
-            console.log(`[clPrompter] Processing command string type: ${type}`);
-            // For now, just use a regular textarea
-            const textarea = document.createElement("textarea");
-            textarea.name = name;
-            textarea.id = name;
-            if (value) textarea.value = value;
-            if (len && !isNaN(len)) textarea.maxLength = parseInt(len, 10);
-            console.log(`[clPrompter] Created textarea for ${name}`);
-            return textarea;
-          case "*HEX":
-            console.log(`[clPrompter] Processing hex type: ${type}`);
-            input.type = "text";
-            input.pattern = "[0-9A-Fa-f]*";
-            break;
-          default:
-            console.log(`[clPrompter] Processing default type: ${type}`);
-            input.type = "text";
-            break;
+          input.addEventListener('blur', function (e) {
+            const value = e.target.value;
+            if (value && !value.match(/^&[A-Z][A-Z0-9]*$/)) {
+              e.target.style.borderColor = 'var(--vscode-inputValidation-errorBorder)';
+              e.target.title = 'Invalid CL variable name. Must be &VARIABLENAME format.';
+            } else {
+              e.target.style.borderColor = '';
+              e.target.title = 'CL variable name (must start with &)';
+            }
+          });
         }
 
-        console.log(`[clPrompter] Successfully created input for ${name}, type=${input.type}`);
+        console.log(`[clPrompter] Successfully created ${input.tagName.toLowerCase()} for ${name}, class=${input.className}`);
         return input;
 
       } catch (error) {
         console.error(`[clPrompter] Error in createInputForType for ${name}:`, error);
-        // Return a basic input as fallback
+
         const fallbackInput = document.createElement("input");
         fallbackInput.type = "text";
         fallbackInput.name = name;
         fallbackInput.id = name;
+        fallbackInput.className = 'input-md';
+
+        if (value) {
+          fallbackInput.value = value;
+          fallbackInput.setAttribute('data-default', value);
+        }
+
         return fallbackInput;
       }
     }
@@ -2262,8 +2641,6 @@
       updateNestedElementsVisibility();
     }
 
-    // ✅ Enhance your existing addElemChildren function to handle ELEM within ELEM
-    // ✅ Replace getElementsByTagName with querySelectorAll to get only direct children
     function addElemChildren(container, parm, kwd, instanceIdx = 0, isMultiInstance = false) {
       // ✅ Use ":scope > Elem" to get only DIRECT child Elem elements
       const elems = parm.querySelectorAll(":scope > Elem");
@@ -2329,7 +2706,6 @@
 
           container.appendChild(subFieldset);
 
-          // ✅ In addElemChildren function, update this section:
         } else {
           // ✅ Regular element - DON'T add level indicator for simple ELEMs
           const elemDiv = document.createElement("div");
@@ -2351,19 +2727,87 @@
       }
     }
 
+    // ✅ Update createElemInput function around line 2890:
     function createElemInput(elem, elemName, elemType, elemLen, elemDft, kwd) {
-      const allowedVals = allowedValsMap[elemName] || [];
+      let allowedVals = allowedValsMap[elemName] || [];
       const noCustomInput = allowedVals._noCustomInput === true;
+
+      // ✅ CRITICAL FIX: If allowedValsMap is empty, extract SpcVals directly from ELEM XML
+      if (allowedVals.length === 0) {
+        console.log(`[createElemInput] ${elemName}: allowedValsMap empty, checking XML for SpcVal/SngVal`);
+
+        const xmlSpcVals = [];
+
+        // Check SpcVal
+        const spcVal = elem.querySelector('SpcVal');
+        if (spcVal) {
+          const spcValues = spcVal.querySelectorAll('Value');
+          spcValues.forEach(val => {
+            const valText = val.getAttribute('Val');
+            if (valText) {
+              xmlSpcVals.push(valText);
+            }
+          });
+        }
+
+        // Check SngVal
+        const sngVal = elem.querySelector('SngVal');
+        if (sngVal) {
+          const sngValues = sngVal.querySelectorAll('Value');
+          sngValues.forEach(val => {
+            const valText = val.getAttribute('Val');
+            if (valText) {
+              xmlSpcVals.push(valText);
+            }
+          });
+        }
+
+        // Check Values
+        const values = elem.querySelector('Values');
+        if (values) {
+          const valueElements = values.querySelectorAll('Value');
+          valueElements.forEach(val => {
+            const valText = val.getAttribute('Val');
+            if (valText) {
+              xmlSpcVals.push(valText);
+            }
+          });
+        }
+
+        if (xmlSpcVals.length > 0) {
+          allowedVals = xmlSpcVals;
+          console.log(`[createElemInput] ${elemName}: Found ${xmlSpcVals.length} values in XML:`, xmlSpcVals);
+        }
+      }
 
       let elemInput;
 
-      // ✅ Use allowedValsMap first (it already consolidates SpcVal, SngVal, Values)
+      // ✅ Calculate width using the correct allowedVals (from map OR XML)
+      const effectiveLen = calculateFieldWidth(elem, allowedVals);
+      const widthClass = getLengthClass(effectiveLen);
+
+      console.log(`[createElemInput] ${elemName}: effectiveLen=${effectiveLen}, widthClass=${widthClass}, allowedVals=${allowedVals.length}`);
+
       if (allowedVals.length > 0) {
-        // Always allow custom input for ELEM parameters (override noCustomInput)
+        // Create parameter input with calculated width
         elemInput = createParameterInput(elemName, allowedVals, noCustomInput, elemDft);
+
+        // Apply the calculated width class
+        if (elemInput.className) {
+          elemInput.className = widthClass;
+        }
       } else {
-        // ✅ Create regular input (no special SpcVal handling needed here)
-        elemInput = createInputForType(elemType, elemName, elemDft, elemLen);
+        // ✅ For elements without allowedVals, force CHAR type to prevent number inputs
+        const safeElemType = 'CHAR';
+
+        // Create regular input with calculated width
+        elemInput = createInputForType(safeElemType, elemName, elemDft, elemLen);
+
+        // Apply the calculated width class
+        if (elemInput.className) {
+          elemInput.className = widthClass;
+        }
+
         if (elemDft) {
           elemInput.setAttribute('data-default', elemDft);
         }
@@ -2738,6 +3182,7 @@
 
       return false;
     }
+
     // ✅ Add this function before the submit handler (around line 800-900)
     function validateRangeInput(input) {
       const fromValue = input.getAttribute('data-range-from');
@@ -2921,9 +3366,16 @@
 
           const wasInOriginal = originalParamMap.hasOwnProperty(parmKwd);
           if (val !== "" && val !== "''" && val !== '""') {
-            values[parmKwd] = val;
+            // ✅ Only include if it's NOT an unchanged default
+            if (!isUnchangedDefault(i, val)) {
+              values[parmKwd] = val;
+              console.log(`[clPrompter] Including changed parameter: ${parmKwd} = "${val}"`);
+            } else {
+              console.log(`[clPrompter] Skipping unchanged default: ${parmKwd} = "${val}"`);
+            }
           } else if (wasInOriginal) {
             values[parmKwd] = originalParamMap[parmKwd];
+            console.log(`[clPrompter] Restoring original parameter: ${parmKwd}`);
           }
         });
 
