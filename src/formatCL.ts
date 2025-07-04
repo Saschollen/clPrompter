@@ -192,11 +192,19 @@ export function buildCLCommand(
 
     console.log(`[buildCLCommand] Processing ${key}: value=${JSON.stringify(value)}, type=${parmType}`);
 
+    // Around line 190 in buildCLCommand function:
+
     // ✅ NEW: Check if parameter has ELEM children (complex ELEM structure)
     const hasElemChildren = meta.Elems && meta.Elems.length > 0;
 
     // ✅ NEW: Check if parameter has QUAL children (qualified parameter)
     const hasQualChildren = meta.Quals && meta.Quals.length > 0;
+
+    // ✅ NEW: Check if parameter allows multiple instances
+    // ✅ FIXED: Type-safe conversion
+    const isMultiInstance = meta.Max ? (+meta.Max > 1) : false;
+    //const maxValue = meta.Max ? Number(meta.Max) : 1;
+    //const isMultiInstance = !isNaN(maxValue) && maxValue > 1;
 
     if (hasElemChildren && Array.isArray(value)) {
       // ✅ ELEM parameter with complex structure
@@ -213,29 +221,62 @@ export function buildCLCommand(
             elemParts.push(quoteIfNeeded(elemValue, allowedVals, parmType));
           }
         }
-        cmd += ` ${key}(${elemParts.join(' ')})`;
-        console.log(`[buildCLCommand] Added mixed ELEM: ${key}(${elemParts.join(' ')})`);
+
+        // ✅ FIXED: For multi-instance ELEM, wrap each part in parentheses
+        if (isMultiInstance && elemParts.length > 1) {
+          const wrappedParts = elemParts.map(part => part.startsWith('(') ? part : `(${part})`);
+          cmd += ` ${key}(${wrappedParts.join(' ')})`;
+          console.log(`[buildCLCommand] Added multi-instance ELEM: ${key}(${wrappedParts.join(' ')})`);
+        } else {
+          cmd += ` ${key}(${elemParts.join(' ')})`;
+          console.log(`[buildCLCommand] Added single-instance ELEM: ${key}(${elemParts.join(' ')})`);
+        }
       } else {
         // ✅ Regular ELEM parameter (array of parts)
-        cmd += ` ${key}(${value.map((vArr: any) =>
+        const elemParts = value.map((vArr: any) =>
           Array.isArray(vArr)
             ? vArr.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join(' ')
             : quoteIfNeeded(vArr, allowedVals, parmType)
-        ).join(' ')})`;
+        );
+
+        // ✅ FIXED: For multi-instance, wrap each part in parentheses
+        if (isMultiInstance && elemParts.length > 1) {
+          const wrappedParts = elemParts.map(part => `(${part})`);
+          cmd += ` ${key}(${wrappedParts.join(' ')})`;
+        } else {
+          cmd += ` ${key}(${elemParts.join(' ')})`;
+        }
       }
     } else if (hasQualChildren && Array.isArray(value)) {
       // ✅ QUAL parameter (array of parts)
       if (Array.isArray(value[0])) {
-        cmd += ` ${key}(${value.map((vArr: any) =>
+        const qualParts = value.map((vArr: any) =>
           vArr.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join('/')
-        ).join(' ')})`;
+        );
+
+        // ✅ FIXED: For multi-instance QUAL, wrap each qualified part in parentheses
+        if (isMultiInstance && qualParts.length > 1) {
+          const wrappedParts = qualParts.map(part => `(${part})`);
+          cmd += ` ${key}(${wrappedParts.join(' ')})`;
+          console.log(`[buildCLCommand] Added multi-instance QUAL: ${key}(${wrappedParts.join(' ')})`);
+        } else {
+          cmd += ` ${key}(${qualParts.join(' ')})`;
+        }
       } else {
-        cmd += ` ${key}(${value.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join('/')})`;
+        const qualPart = value.map((v: string) => quoteIfNeeded(v, allowedVals, parmType)).join('/');
+        cmd += ` ${key}(${qualPart})`;
       }
     } else if (Array.isArray(value)) {
-      // ✅ NEW: ANY multi-instance parameter (Max > 1) - regardless of type
-      cmd += ` ${key}(${value.map(v => quoteIfNeeded(v, allowedVals, parmType)).join(' ')})`;
-      console.log(`[buildCLCommand] Added multi-instance parameter: ${key}(${value.map(v => quoteIfNeeded(v, allowedVals, parmType)).join(' ')})`);
+      // ✅ Multi-instance parameter (Max > 1) - regardless of type
+      if (isMultiInstance && value.length > 1) {
+        // ✅ FIXED: For multi-instance simple parameters, wrap each value in parentheses
+        const wrappedValues = value.map(v => `(${quoteIfNeeded(v, allowedVals, parmType)})`);
+        cmd += ` ${key}(${wrappedValues.join(' ')})`;
+        console.log(`[buildCLCommand] Added multi-instance parameter: ${key}(${wrappedValues.join(' ')})`);
+      } else {
+        // Single instance or single value - no extra parentheses needed
+        cmd += ` ${key}(${value.map(v => quoteIfNeeded(v, allowedVals, parmType)).join(' ')})`;
+      }
     } else {
       // ✅ Simple parameter
       cmd += ` ${key}(${quoteIfNeeded(value, allowedVals, parmType)})`;

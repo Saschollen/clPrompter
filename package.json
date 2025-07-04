@@ -2,7 +2,7 @@
   "name": "clprompter",
   "displayName": "Bob Cozzi's CL Prompter for IBM i",
   "description": "Bob Cozzi's CL Prompter for IBM i CL commands",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "author": {
     "name": "Bob Cozzi",
     "url": "https://github.com/bobcozzi"
@@ -53,6 +53,12 @@
           "type": "boolean",
           "default": true,
           "description": "Enable F4=Prompt for CL commands"
+        },
+        "clPrompter.kwdColor": {
+          "type": "string",
+          "default": "#22aa22",
+          "description": "Color for parameter keywords in prompter.  Use CSS color values like #22aa22, green, or rgb(34,170,34).",
+          "pattern": "^(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3}|[a-zA-Z]+|rgb\\(\\d+,\\s*\\d+,\\s*\\d+\\)|rgba\\(\\d+,\\s*\\d+,\\s*\\d+,\\s*[0-9.]+\\))$"
         }
       }
     },

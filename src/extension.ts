@@ -157,7 +157,7 @@ export class ClPromptPanel {
         xml: string,
         editor?: vscode.TextEditor,
         selection?: vscode.Selection,
-        fullCmd?: string // <-- add this
+        fullCmd?: string
     ) {
         this._panel = panel;
         this._extensionUri = extensionUri;
@@ -188,35 +188,25 @@ export class ClPromptPanel {
                     // ✅ Process XML in TypeScript instead of JavaScript
                     const allowedValsMap = buildAllowedValsMap(xml);
 
+                    // ✅ Read the keyword color configuration
+                    const keywordColor = vscode.workspace.getConfiguration('clPrompter').get('kwdColor');
+
                     // Send processed data instead of raw XML
                     panel.webview.postMessage({
                         type: 'formData',
                         xml, // Still send XML for other processing
                         allowedValsMap,
-                        cmdName
+                        cmdName,
+                        paramMap: this._paramMap, // ✅ ADD THIS LINE
+                        config: {
+                            keywordColor: keywordColor
+                        }
                     });
 
-                    // ✅ Generate population instructions if we have parameter data
-                    // ✅ Add this in extension.ts around line 207
-                    if (this._paramMap) {
-                        const populationInstructions = generatePopulationInstructions(
-                            this._paramMap,
-                            xml,
-                            { debugMode: true }
-                        );
-
-                        // ✅ ADD DEBUGGING HERE
-                        console.log('[clPrompter] Generated population instructions:', populationInstructions);
-                        console.log('[clPrompter] Original paramMap:', this._paramMap);
-                        console.log('[clPrompter] Instructions keys:', Object.keys(populationInstructions || {}));
-
-                        panel.webview.postMessage({
-                            type: 'populateForm',
-                            instructions: populationInstructions
-                        });
-                    }
-
+                    // ✅ Send setLabel message first (immediately after formData)
                     panel.webview.postMessage({ type: "setLabel", label: cmdLabel });
+
+
                 }
             });
 

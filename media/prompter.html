@@ -13,36 +13,48 @@
       padding: 10px;
     }
 
-    /* ✅ Fix VS Code Elements text visibility */
-    vscode-textfield {
-      --vscode-input-foreground: var(--vscode-editor-foreground, #000000) !important;
-      --vscode-foreground: var(--vscode-editor-foreground, #000000) !important;
-      color: var(--vscode-editor-foreground, #000000) !important;
-    }
-
     vscode-single-select {
-      --vscode-input-foreground: var(--vscode-editor-foreground, #000000) !important;
-      --vscode-foreground: var(--vscode-editor-foreground, #000000) !important;
-      color: var(--vscode-editor-foreground, #000000) !important;
+      --vscode-font-weight: 400;
+      --vscode-foreground: #006400;
     }
 
-    /* ✅ Force text color in shadow DOM (if accessible) */
-    vscode-textfield::part(control),
-    vscode-single-select::part(control) {
-      color: var(--vscode-editor-foreground, #000000) !important;
+    vscode-textarea {
+      --vscode-editor-background-size: #FFFFFF;
+      --vscode-editor-foreground: #006400;
+      --vscode-input-placeholderForeground: #989898;
+      --vscode-font-weight: 400;
+      --vscode-settings-textInputForeground: #006400;
     }
 
-    /* ✅ Keep placeholder text light */
-    vscode-textfield::placeholder,
-    vscode-single-select::placeholder {
-      color: var(--vscode-input-placeholderForeground, #6c6c6c) !important;
-      opacity: 0.7;
+    vscode-textfield {
+      --vscode-settings-textInputBackground: #FFFFFF;
+      --vscode-settings-textInputForeground: #006400;
+      --vscode-input-placeholderForeground: #989898;
+      --vscode-font-weight: 400;
+
     }
 
-    /* ✅ Ensure input text is dark in both light and dark modes */
-    vscode-textfield input,
-    vscode-single-select input {
-      color: var(--vscode-editor-foreground, #000000) !important;
+    /* ✅ Keyword highlighting in prompts */
+    .keyword-highlight {
+      color: var(--keyword-color, #22aa22);
+      /* Default: dark green */
+      font-weight: bold;
+    }
+
+    /* ✅ Theme-aware keyword colors */
+    body[data-vscode-theme-kind="vscode-light"] .keyword-highlight {
+      color: var(--keyword-color, #0d7d0d);
+      /* Darker green for light theme */
+    }
+
+    body[data-vscode-theme-kind="vscode-dark"] .keyword-highlight {
+      color: var(--keyword-color, #22aa22);
+      /* Brighter green for dark theme */
+    }
+
+    body[data-vscode-theme-kind="vscode-high-contrast"] .keyword-highlight {
+      color: var(--keyword-color, #00ff00);
+      /* High contrast green */
     }
 
     /* ✅ Enhanced tooltip styles with higher z-index */
@@ -377,7 +389,20 @@
         return;
       }
 
+      // Handle configuration updates
+      if (message.type === "configuration") {
+        console.log("[clPrompter] Received configuration:", message.config);
+
+        if (message.config.keywordColor) {
+          // ✅ Apply custom keyword color
+          document.documentElement.style.setProperty('--keyword-color', message.config.keywordColor);
+          console.log(`[clPrompter] Set keyword color to: ${message.config.keywordColor}`);
+        }
+      }
+
       // ✅ Handle new formData message with pre-processed allowedValsMap
+      // In the formData message handler, after loadForm() call (around line 470):
+
       if (message.type === "formData") {
         console.log("[clPrompter] Processing formData message");
         const parser = new DOMParser();
@@ -386,6 +411,17 @@
         // ✅ Use pre-processed allowedValsMap from TypeScript
         allowedValsMap = message.allowedValsMap || {};
         cmdName = message.cmdName || cmdName;
+
+        // ✅ CRITICAL: Set originalParamMap from TypeScript
+        if (message.paramMap) {
+          originalParamMap = message.paramMap;
+          console.log("[clPrompter] Received originalParamMap:", originalParamMap);
+        }
+
+        if (message.config && message.config.keywordColor) {
+          console.log(`[clPrompter] Set keyword color to: ${message.config.keywordColor}`);
+          document.documentElement.style.setProperty('--keyword-color', message.config.keywordColor);
+        }
 
         console.log(`[clPrompter] Updated cmdName to: ${cmdName}`);
         console.log(`[clPrompter] Pre-processed allowedValsMap keys:`, Object.keys(allowedValsMap));
@@ -409,33 +445,18 @@
         console.log("[clPrompter] Found", parms.length, "parameters");
 
         setMainTitle();
-        loadForm(); // ✅ buildAllowedValsMap() call removed - already done in TypeScript
+        loadForm();
         console.log("[clPrompter] loadForm completed");
-        // Add this right after the form loads in prompter.html
-        setTimeout(() => {
-          console.log("[clPrompter] DEBUG: All TOPGMQ inputs created:");
-          const topgmqInputs = document.querySelectorAll('[name*="TOPGMQ"]');
-          topgmqInputs.forEach(input => {
-            console.log(`  ${input.tagName}[name="${input.name}"][id="${input.id}"]`);
+
+        if (originalParamMap && Object.keys(originalParamMap).length > 0) {
+          console.log("[clPrompter] Populating form with original parameter values:", originalParamMap);
+          // ✅ Wait for next animation frame (ensures DOM is rendered)
+          requestAnimationFrame(() => {
+            populateFormFromValues(originalParamMap);
           });
-        }, 1000);
-      }
-
-      // ✅ Handle new populateForm message with instructions
-      if (message.type === "populateForm") {
-        try {
-          console.log("[clPrompter] Processing populateForm with instructions");
-          console.log('[prompter] Received population instructions:', message.instructions);
-          console.log('[prompter] Instructions keys:', Object.keys(message.instructions || {}));
-
-          // Check if instructions contain expected parameters
-          if (message.instructions?.MSGID) {
-            console.log('[prompter] MSGID instruction:', message.instructions.MSGID);
-          }
-          // Execute population instructions
-          executePopulationInstructions(message.instructions);
-        } catch (error) {
-          console.error("[clPrompter] Error in populateForm handler:", error);
+          // setTimeout(() => {
+          //  populateFormFromValues(originalParamMap);
+          // }, 10); // ✅ Minimal 10ms delay - just enough for DOM rendering
         }
       }
 
@@ -447,7 +468,7 @@
 
       // ✅ LEGACY: Handle old formXml for backward compatibility (remove this later)
       if (message.type === "formXml") {
-        console.warn("[clPrompter] Received legacy formXml message - this should be migrated to formData");
+        console.warn("[clPrompter] Received legacy formXml message - this should be migrated to formData handler");
         const parser = new DOMParser();
         xmlDoc = parser.parseFromString(message.xml, "text/xml");
 
@@ -465,6 +486,23 @@
         }, 1000);
       }
     });
+
+
+    function detectVSCodeTheme() {
+      // ✅ Detect VS Code theme for better color defaults
+      const body = document.body;
+      const computedStyle = getComputedStyle(body);
+      const bgColor = computedStyle.getPropertyValue('--vscode-editor-background') || computedStyle.backgroundColor;
+
+      // Simple heuristic: if background is dark, use lighter keyword color
+      const isLightTheme = bgColor.includes('rgb(') &&
+        bgColor.split(',').slice(0, 3).every(val => parseInt(val.replace(/\D/g, '')) > 128);
+
+      body.setAttribute('data-vscode-theme-kind', isLightTheme ? 'vscode-light' : 'vscode-dark');
+
+      console.log(`[clPrompter] Detected theme: ${isLightTheme ? 'light' : 'dark'}`);
+    }
+
 
     // ✅ Add this function around line 350 (after global variables)
     function resetPrompterState() {
@@ -589,125 +627,45 @@
       return result;
     }
 
-    // ✅ Add this function around line 600 (after utility functions)
-    function executePopulationInstructions(instructions) {
-      console.log(`[clPrompter] Executing ${instructions.length} population instructions`);
 
-      instructions.forEach((instruction, index) => {
-        console.log(`[clPrompter] Instruction ${index}:`, instruction);
-
-        // Find target element
-        let target;
-        if (instruction.target.startsWith('.') || instruction.target.startsWith('#')) {
-          // CSS selector
-          target = document.querySelector(instruction.target);
-        } else {
-          // Element name
-          target = document.querySelector(`[name="${instruction.target}"]`) ||
-            document.querySelector(`vscode-single-select[name="${instruction.target}"]`) ||
-            document.querySelector(`vscode-textfield[name="${instruction.target}"]`) ||
-            document.querySelector(`#${instruction.target}`);
-        }
-
-        if (!target) {
-          console.log(`[clPrompter] Target not found for instruction ${index}: ${instruction.target}`);
-
-          // ✅ Debug: List available targets
-          const availableInputs = document.querySelectorAll('input, select, vscode-single-select, vscode-textfield');
-          const namesList = Array.from(availableInputs)
-            .map(inp => `${inp.tagName}[name="${inp.name}"][id="${inp.id}"]`)
-            .slice(0, 10); // Show first 10
-
-          console.log(`[clPrompter] Available targets (first 10):`, namesList);
-          return;
-        }
-
-        // Execute instruction based on type
-        switch (instruction.type) {
-          case 'simple':
-          case 'elem':
-          case 'qual':
-            setElementValue(target, instruction.value, instruction.options);
-            break;
-
-          case 'multi-instance':
-            if (instruction.value === 'click') {
-              console.log(`[clPrompter] Clicking: ${instruction.target}`);
-              target.click();
-
-              // Wait for DOM update after adding instance
-              setTimeout(() => {
-                console.log(`[clPrompter] Instance added, continuing with next instructions`);
-              }, 50);
-            }
-            break;
-
-          default:
-            console.warn(`[clPrompter] Unknown instruction type: ${instruction.type}`);
-        }
-      });
-
-      console.log('[clPrompter] Population instructions completed');
-    }
 
     // ✅ Helper function to set element values consistently
+    // Update setElementValue around line 1230:
+
     function setElementValue(element, value, options = {}) {
       console.log(`[clPrompter] Setting value "${value}" on ${element.tagName}[name="${element.name}"]`);
 
       if (element.tagName.toLowerCase() === 'vscode-single-select') {
         // Handle VS Code select
-        const currentValue = element.value;
         element.value = value;
 
-        // ✅ Enhanced VS Code Elements handling
-        if (options.forceValue && element.value !== value) {
-          console.log(`[clPrompter] Force-setting VS Code select value`);
-
-          // Try creating option if it doesn't exist
-          const existingOption = element.querySelector(`vscode-option[value="${value}"]`);
-          if (!existingOption && value) {
-            const newOption = document.createElement("vscode-option");
-            newOption.value = value;
-            newOption.textContent = value;
-            newOption.selected = true;
-            element.appendChild(newOption);
-          }
-
-          element.value = value;
-
-          // ✅ Try shadow DOM access for combobox
-          if (options.shadowDOMAccess && element.shadowRoot) {
-            setTimeout(() => {
-              const comboboxInput = element.shadowRoot.querySelector('.combobox-input, input, .input');
-              if (comboboxInput) {
-                comboboxInput.value = value;
-                console.log(`[clPrompter] Set shadow DOM input: "${value}"`);
-              }
-            }, 10);
-          }
+        // ✅ Try creating option if it doesn't exist
+        const existingOption = element.querySelector(`vscode-option[value="${CSS.escape(value)}"]`);
+        if (!existingOption && value) {
+          const newOption = document.createElement("vscode-option");
+          newOption.value = value;
+          newOption.textContent = value;
+          newOption.selected = true;
+          element.appendChild(newOption);
         }
 
-        if (options.dispatchEvents) {
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-          element.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-
-        console.log(`[clPrompter] VS Code select value set: "${element.value}" (was: "${currentValue}")`);
+        element.value = value;
+        console.log(`[clPrompter] VS Code select value set: "${element.value}"`);
 
       } else if (element.tagName.toLowerCase() === 'vscode-textfield') {
-        // Handle VS Code textfield
         element.value = value;
-
-        if (options.dispatchEvents) {
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-          element.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-
         console.log(`[clPrompter] VS Code textfield value set: "${value}"`);
 
       } else if (element.tagName === 'SELECT' && element.dataset.customInputId) {
-        // Handle HTML select with custom input
-        const customInput = document.getElementById(element.dataset.customInputId);
+        // ✅ FIXED: Handle custom input ID with special characters
+        let customInput;
+        try {
+          customInput = document.getElementById(element.dataset.customInputId);
+        } catch (e) {
+          // If ID has special characters, try escaping
+          const escapedId = CSS.escape(element.dataset.customInputId);
+          customInput = document.querySelector(`#${escapedId}`);
+        }
 
         // Try to find value in select options first
         let foundOption = false;
@@ -731,12 +689,6 @@
       } else {
         // Handle regular input
         element.value = value;
-
-        if (options.dispatchEvents) {
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-          element.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-
         console.log(`[clPrompter] Regular input value set: "${value}"`);
       }
     }
@@ -1316,6 +1268,8 @@
       return parts;
     }
 
+    // Replace populateElemInputs function around line 1280:
+
     function populateElemInputs(parm, kwd, vals, instanceIdx = 0, container = document) {
       console.log(`[clPrompter] ===== populateElemInputs START =====`);
       console.log(`[clPrompter] populateElemInputs: ${kwd}, vals:`, vals, `instanceIdx: ${instanceIdx}`);
@@ -1323,158 +1277,253 @@
       const elems = parm ? parm.getElementsByTagName("Elem") : [];
       console.log(`[clPrompter] ${kwd} - Found ${elems.length} elements`);
 
-      // ✅ Determine if this is a multi-instance parameter
-      const isMultiInstance = container !== document && container.closest('.parm-multi-group');
-      console.log(`[clPrompter] ${kwd} - isMultiInstance: ${isMultiInstance}`);
+      // ✅ Check for PARM-level default (SngVal)
+      let parmDefault = null;
+      if (parm) {
+        parmDefault = parm.getAttribute("Dft");
+        if (!parmDefault) {
+          const sngVal = parm.querySelector('SngVal');
+          if (sngVal) {
+            const defaultSngVal = sngVal.querySelector('Value');
+            if (defaultSngVal) {
+              parmDefault = defaultSngVal.getAttribute('Val');
+              console.log(`[clPrompter] ${kwd} - Found SngVal default: "${parmDefault}"`);
+            }
+          }
+        }
+      }
 
-      let splitVals;
-      if (Array.isArray(vals)) {
+      const isMultiInstance = container !== document && container.closest('.parm-multi-group');
+      console.log(`[clPrompter] ${kwd} - isMultiInstance: ${isMultiInstance}, parmDefault: "${parmDefault}"`);
+
+      let splitVals = [];
+
+      // ✅ FIXED: Better value parsing
+      if (!vals || vals === "" || vals === null || vals === undefined) {
+        if (parmDefault) {
+          console.log(`[clPrompter] ${kwd} - No user values, using PARM default: "${parmDefault}"`);
+
+          // Check if this is a SngVal
+          const sngValInput = container.querySelector(`[name="${kwd}_SNGVAL"]`) ||
+            container.querySelector(`[name="${kwd}_SNGVAL_${instanceIdx}"]`) ||
+            document.querySelector(`[name="${kwd}_SNGVAL"]`);
+
+          if (sngValInput) {
+            console.log(`[clPrompter] ${kwd} - Setting SngVal input to default: "${parmDefault}"`);
+            sngValInput.value = parmDefault;
+
+            const options = sngValInput.querySelectorAll('vscode-option, option');
+            const matchingOption = Array.from(options).find(opt =>
+              opt.value === parmDefault && opt.getAttribute('data-sngval') === 'true'
+            );
+
+            if (matchingOption) {
+              console.log(`[clPrompter] ${kwd} - Default "${parmDefault}" is a SngVal, skipping ELEM population`);
+              return;
+            }
+          }
+
+          splitVals = [parmDefault];
+        } else {
+          splitVals = [];
+        }
+      } else if (Array.isArray(vals)) {
         splitVals = vals;
       } else if (typeof vals === 'string') {
-        if (isCLExpression(vals)) {
-          splitVals = [vals];
+        // ✅ FIXED: Handle multi-instance INCREL format correctly
+        let cleanValue = vals.trim();
+
+        // Remove outer parentheses if present
+        if (cleanValue.startsWith('(') && cleanValue.endsWith(')')) {
+          cleanValue = cleanValue.slice(1, -1);
+          console.log(`[clPrompter] ${kwd} - Stripped parentheses: "${vals}" -> "${cleanValue}"`);
+        }
+
+        // ✅ Parse space-separated values while preserving quotes
+        if (cleanValue) {
+          splitVals = parseSpaceSeparatedValues(cleanValue);
         } else {
-          splitVals = vals.split(' ');
+          splitVals = [];
         }
       } else {
         splitVals = [];
       }
 
-      console.log(`[clPrompter] ${kwd} - Split values:`, splitVals);
+      console.log(`[clPrompter] ${kwd} - Final split values:`, splitVals);
 
+      // ✅ FIXED: Populate each ELEM with the corresponding value
       for (let e = 0; e < elems.length; e++) {
         const elem = elems[e];
         const elemType = elem.getAttribute("Type") || "CHAR";
-
-        // ✅ Use correct naming pattern based on instance type
         const elemName = isMultiInstance ? `${kwd}_ELEM${e}_${instanceIdx}` : `${kwd}_ELEM${e}`;
-        const value = splitVals[e] !== undefined ? splitVals[e] : "";
 
-        console.log(`[clPrompter] ${kwd} - Processing element ${e}:`);
-        console.log(`[clPrompter]   - elemName: ${elemName}`);
-        console.log(`[clPrompter]   - elemType: ${elemType}`);
-        console.log(`[clPrompter]   - value: "${value}"`);
+        // ✅ Use splitVals[e] or individual ELEM default
+        let value = splitVals[e] !== undefined ? splitVals[e] : "";
+        if (!value) {
+          value = elem.getAttribute("Dft") || "";
+        }
 
-        // ✅ Handle nested ELEM (ELEM within ELEM) - like TOPGMQ's "Call stack entry identifier"
-        if (elemType === "ELEM") {
-          console.log(`[clPrompter] ${kwd} - Found nested ELEM: ${elemName}`);
+        console.log(`[clPrompter] ${kwd} - Processing element ${e}: ${elemName} = "${value}"`);
 
-          // ✅ Parse the nested value - strip parentheses and split on spaces
-          let subValues = [];
-          if (typeof value === 'string' && value.trim() !== '') {
-            let cleanValue = value.trim();
+        // ✅ FIXED: Find and set the actual input element
+        let input = container.querySelector(`[name="${elemName}"]`);
 
-            // ✅ Remove surrounding parentheses if present
-            if (cleanValue.startsWith('(') && cleanValue.endsWith(')')) {
-              cleanValue = cleanValue.slice(1, -1); // Remove first and last character
-              console.log(`[clPrompter] ${kwd} - Stripped parentheses: "${value}" -> "${cleanValue}"`);
-            }
+        if (!input) {
+          input = container.querySelector(`vscode-single-select[name="${elemName}"]`) ||
+            container.querySelector(`vscode-textfield[name="${elemName}"]`);
+        }
 
-            subValues = cleanValue.split(' ').filter(v => v.trim() !== '');
-          } else if (Array.isArray(value)) {
-            subValues = value;
-          }
-
-          console.log(`[clPrompter] ${kwd} - Nested ELEM sub-values:`, subValues);
-
-          // Get the sub-elements
-          const subElems = elem.querySelectorAll(":scope > Elem");
-          console.log(`[clPrompter] ${kwd} - Found ${subElems.length} sub-elements`);
-
-          // Populate each sub-element
-          for (let se = 0; se < subElems.length; se++) {
-            const subElemName = `${elemName}_SUB${se}`;
-            const subValue = subValues[se] !== undefined ? subValues[se] : "";
-
-            console.log(`[clPrompter] ${kwd} - Processing sub-element ${se}:`);
-            console.log(`[clPrompter]   - subElemName: ${subElemName}`);
-            console.log(`[clPrompter]   - subValue: "${subValue}"`);
-
-            // Find the sub-element input
-            let subInput = container.querySelector(`[name="${subElemName}"]`);
-
-            if (!subInput) {
-              // Try VS Code Elements
-              const vsCodeSelect = container.querySelector(`vscode-single-select[name="${subElemName}"]`);
-              const vsCodeTextfield = container.querySelector(`vscode-textfield[name="${subElemName}"]`);
-              subInput = vsCodeSelect || vsCodeTextfield;
-            }
-
-            if (subInput) {
-              if (subInput.tagName.toLowerCase() === 'vscode-single-select') {
-                // Handle VS Code select
-                subInput.value = subValue;
-                console.log(`[clPrompter]   - Set VS Code select: "${subValue}" for sub-element ${se}`);
-              } else {
-                // Handle regular input
-                subInput.value = subValue;
-                console.log(`[clPrompter]   - Set regular input: "${subValue}" for sub-element ${se} (${subInput.tagName})`);
-              }
-            } else {
-              console.log(`[clPrompter]   - NO SUB-INPUT FOUND for ${subElemName}`);
-
-              // ✅ Debug: List all available inputs in container
-              const allInputs = container.querySelectorAll('input, select, vscode-single-select, vscode-textfield');
-              console.log(`[clPrompter]   - Available inputs in container:`,
-                Array.from(allInputs).map(inp => `${inp.tagName}[name="${inp.name}"][id="${inp.id}"]`)
-              );
-            }
-          }
-        } else {
-          // ✅ Regular element processing (existing logic)
-          let input = container.querySelector(`[name="${elemName}"]`);
-
-          if (!input) {
-            // Try VS Code Elements
-            const vsCodeSelect = container.querySelector(`vscode-single-select[name="${elemName}"]`);
-            const vsCodeTextfield = container.querySelector(`vscode-textfield[name="${elemName}"]`);
-            input = vsCodeSelect || vsCodeTextfield;
-          }
-
-          if (!input) {
-            // Try select+custom pattern
-            const select = container.querySelector(`select[name="${elemName}"]`);
-            const customInput = container.querySelector(`#${elemName}_custom`);
-
-            if (select && customInput) {
-              // Handle select+custom logic
-              let foundIdx = -1;
-              for (let i = 0; i < select.options.length; i++) {
-                if (select.options[i].value.trim().toUpperCase() === value.trim().toUpperCase()) {
-                  foundIdx = i;
-                  break;
-                }
-              }
-              if (foundIdx !== -1 && value) {
-                select.selectedIndex = foundIdx;
-                customInput.value = "";
-                console.log(`[clPrompter]   - Set select option ${foundIdx} for element ${e}`);
-              } else if (value) {
-                select.selectedIndex = -1;
-                customInput.value = value;
-                console.log(`[clPrompter]   - Set custom input "${value}" for element ${e}`);
-              }
-              continue;
-            }
-          }
-
-          if (input) {
-            if (input.tagName.toLowerCase() === 'vscode-single-select') {
-              // Handle VS Code select
-              input.value = value;
-              console.log(`[clPrompter]   - Set VS Code select: "${value}" for element ${e}`);
-            } else {
-              // Handle regular input
-              input.value = value;
-              console.log(`[clPrompter]   - Set regular input: "${value}" for element ${e} (${input.tagName})`);
-            }
+        if (input) {
+          if (input.tagName.toLowerCase() === 'vscode-single-select') {
+            input.value = value;
+          } else if (input.tagName.toLowerCase() === 'vscode-textfield') {
+            input.value = value;
           } else {
-            console.log(`[clPrompter]   - NO INPUT FOUND for element ${e} (tried ${elemName})`);
+            input.value = value;
           }
+          console.log(`[clPrompter] Set ${elemName} to: "${value}"`);
+        } else {
+          console.log(`[clPrompter] NO INPUT FOUND for ${elemName}`);
         }
       }
 
       console.log(`[clPrompter] ===== populateElemInputs END =====`);
+    }
+
+    // ✅ Keep the parseSpaceSeparatedValues helper function:
+    function parseSpaceSeparatedValues(str) {
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      let quoteChar = '';
+
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+
+        if (!inQuotes && (char === "'" || char === '"')) {
+          inQuotes = true;
+          quoteChar = char;
+          current += char;
+        } else if (inQuotes && char === quoteChar) {
+          inQuotes = false;
+          current += char;
+        } else if (!inQuotes && char === ' ') {
+          if (current.trim()) {
+            values.push(current.trim());
+            current = '';
+          }
+        } else {
+          current += char;
+        }
+      }
+
+      if (current.trim()) {
+        values.push(current.trim());
+      }
+
+      return values;
+    }
+
+
+    // ✅ NEW: Helper function to populate individual ELEM input
+    function populateElemInput(elem, elemName, elemType, value, container) {
+      // ✅ Handle nested ELEM (ELEM within ELEM) - like TOPGMQ's "Call stack entry identifier"
+      if (elemType === "ELEM") {
+        console.log(`[clPrompter] Found nested ELEM: ${elemName}`);
+
+        // ✅ Parse the nested value - strip parentheses and split on spaces
+        let subValues = [];
+        if (typeof value === 'string' && value.trim() !== '') {
+          let cleanValue = value.trim();
+
+          // ✅ Remove surrounding parentheses if present
+          if (cleanValue.startsWith('(') && cleanValue.endsWith(')')) {
+            cleanValue = cleanValue.slice(1, -1); // Remove first and last character
+            console.log(`[clPrompter] Stripped parentheses: "${value}" -> "${cleanValue}"`);
+          }
+
+          subValues = cleanValue.split(' ').filter(v => v.trim() !== '');
+        } else if (Array.isArray(value)) {
+          subValues = value;
+        }
+
+        console.log(`[clPrompter] Nested ELEM sub-values:`, subValues);
+
+        // Get the sub-elements
+        const subElems = elem.querySelectorAll(":scope > Elem");
+        console.log(`[clPrompter] Found ${subElems.length} sub-elements`);
+
+        // Populate each sub-element
+        for (let se = 0; se < subElems.length; se++) {
+          const subElemName = `${elemName}_${se}`;
+          const subValue = subValues[se] !== undefined ? subValues[se] : "";
+
+          console.log(`[clPrompter] Processing sub-element ${se}: ${subElemName} = "${subValue}"`);
+          setElementValue(container, subElemName, subValue);
+        }
+      } else {
+        // ✅ Regular element processing
+        setElementValue(container, elemName, value);
+      }
+    }
+
+    // ✅ NEW: Helper function to set element value in correct container
+    function setElementValue(container, elemName, value) {
+      let input = container.querySelector(`[name="${elemName}"]`);
+
+      if (!input) {
+        // Try VS Code Elements
+        const vsCodeSelect = container.querySelector(`vscode-single-select[name="${elemName}"]`);
+        const vsCodeTextfield = container.querySelector(`vscode-textfield[name="${elemName}"]`);
+        input = vsCodeSelect || vsCodeTextfield;
+      }
+
+      if (!input) {
+        // Try select+custom pattern
+        const select = container.querySelector(`select[name="${elemName}"]`);
+        const customInput = container.querySelector(`#${elemName}_custom`);
+
+        if (select && customInput) {
+          // Handle select+custom logic
+          let foundIdx = -1;
+          for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value.trim().toUpperCase() === value.trim().toUpperCase()) {
+              foundIdx = i;
+              break;
+            }
+          }
+          if (foundIdx !== -1 && value) {
+            select.selectedIndex = foundIdx;
+            customInput.value = "";
+            console.log(`[clPrompter] Set select option for ${elemName}: "${value}"`);
+          } else if (value) {
+            select.selectedIndex = -1;
+            customInput.value = value;
+            console.log(`[clPrompter] Set custom input for ${elemName}: "${value}"`);
+          }
+          return;
+        }
+      }
+
+      if (input) {
+        if (input.tagName.toLowerCase() === 'vscode-single-select') {
+          // Handle VS Code select
+          input.value = value;
+          console.log(`[clPrompter] Set VS Code select for ${elemName}: "${value}"`);
+        } else {
+          // Handle regular input
+          input.value = value;
+          console.log(`[clPrompter] Set regular input for ${elemName}: "${value}"`);
+        }
+      } else {
+        console.log(`[clPrompter] NO INPUT FOUND for ${elemName}`);
+
+        // ✅ Debug: List all available inputs in container
+        const allInputs = container.querySelectorAll('input, select, vscode-single-select, vscode-textfield');
+        console.log(`[clPrompter] Available inputs in container:`,
+          Array.from(allInputs).map(inp => `${inp.tagName}[name="${inp.name}"][id="${inp.id}"]`)
+        );
+      }
     }
 
     function populateQualInputs(parm, kwd, vals, container = document) {
@@ -1816,27 +1865,52 @@
       return 'input-full';                           // 100% - very long text (textarea)
     }
 
-    function populateFormFromValues_ORIGINAL(paramMap) {
+
+
+    async function populateFormFromValues(paramMap) {
       console.log("[clPrompter] populateFormFromValues called with:", paramMap);
       console.log("[clPrompter] Keys to process:", Object.keys(paramMap));
+
       for (const [kwd, vals] of Object.entries(paramMap)) {
-        console.log(`[clPrompter] Processing parameter: ${kwd}, values:`, vals); // ✅ Add this line
+        console.log(`[clPrompter] Processing parameter: ${kwd}, values:`, vals);
+
         const group = document.querySelector(`.parm-multi-group[data-kwd="${kwd}"]`);
         if (group) {
-          console.log(`[clPrompter] ${kwd} - Found multi-group, skipping ELEM check`); // ✅ Add this
+          console.log(`[clPrompter] ${kwd} - Found multi-group`);
+
+          // Clear existing instances except the first one
           let instances = group.querySelectorAll('.parm-instance');
           for (let i = 1; i < instances.length; i++) instances[i].remove();
+
+          // ✅ FIXED: Flatten the parameter values properly
           let splitValsArr = flattenParmValue(vals);
+          console.log(`[clPrompter] ${kwd} - Flattened values:`, splitValsArr);
+
+          // ✅ FIXED: Create instances and populate each one
           for (let i = 0; i < splitValsArr.length; i++) {
+            console.log(`[clPrompter] ${kwd} - Processing instance ${i}: "${splitValsArr[i]}"`);
+
+            // Add new instance if needed (for i > 0)
             if (i > 0) {
               const addBtn = group.querySelector('.add-parm-btn');
-              if (addBtn) addBtn.click();
+              if (addBtn) {
+                addBtn.click();
+                // ✅ Small delay to let DOM update
+                await new Promise(resolve => setTimeout(resolve, 10));
+              }
             }
-            const inst = group.querySelectorAll('.parm-instance')[i];
-            if (!inst) continue;
+
+            // Get the current instance container
+            const currentInstances = group.querySelectorAll('.parm-instance');
+            const inst = currentInstances[i];
+            if (!inst) {
+              console.error(`[clPrompter] ${kwd} - Instance ${i} not found!`);
+              continue;
+            }
+
             const parm = Array.from(parms).find(p => p.getAttribute("Kwd") === kwd);
             if (parm && parm.getElementsByTagName("Elem").length > 0) {
-              console.log(`[clPrompter] ${kwd} - Processing ELEM parameter, values:`, vals);
+              console.log(`[clPrompter] ${kwd} - Processing ELEM parameter for instance ${i}, value: "${splitValsArr[i]}"`);
               populateElemInputs(parm, kwd, splitValsArr[i], i, inst);
               continue;
             }
@@ -1844,13 +1918,14 @@
               populateQualInputs(parm, kwd, splitValsArr[i], inst);
               continue;
             }
-            console.log(`[clPrompter] ${kwd} - Processing as simple parameter`); // ✅ Add this
 
+            // Simple parameter handling
             const select = inst.querySelector(`select[name="${kwd}"]`);
             const customInput = inst.querySelector(`#${kwd}_custom`);
             let value = (splitValsArr[i] !== undefined && splitValsArr[i] !== null && splitValsArr[i] !== "")
               ? splitValsArr[i].toString().trim()
               : getDefaultForInput(select, parms);
+
             if (select && customInput) {
               let foundIdx = -1;
               for (let j = 0; j < select.options.length; j++) {
@@ -1874,9 +1949,11 @@
               if (input) input.value = value;
             }
           }
+
           handleSngvalLocking(group);
           continue;
         }
+        // Single-instance parameters
         const parm = Array.from(parms).find(p => p.getAttribute("Kwd") === kwd);
         if (parm && parm.getElementsByTagName("Elem").length > 0) {
           populateElemInputs(parm, kwd, vals, 0, document);
@@ -1886,12 +1963,14 @@
           populateQualInputs(parm, kwd, vals, document);
           continue;
         }
-        // --- Simple parameter ---
+
+        // Simple parameter
         const input = document.querySelector(`[name="${kwd}"], [name^="${kwd}_"]`);
         if (input) {
           input.value = Array.isArray(vals) ? vals[0] : vals;
         }
       }
+
       document.querySelectorAll('.elem-group').forEach(group => handleSngvalLocking(group));
     }
 
@@ -2442,22 +2521,33 @@
       return div;
     }
 
+
+    function formatPromptWithKeyword(prompt, kwd, idx = null, max = 1) {
+      let labelText = prompt;
+
+      if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
+        // ✅ Add keyword with highlighting
+        labelText += ` (<span class="keyword-highlight">${kwd}</span>)`;
+      }
+
+      if (max > 1 && idx !== null) {
+        labelText += ` [${idx + 1}]`;
+      }
+
+      return labelText;
+    }
+
     function addParameterLabel(container, prompt, kwd, idx, max, instanceId) {
       const label = document.createElement("label");
       label.className = "form-label";
 
-      let labelText = prompt;
-      if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
-        labelText += ` (${kwd})`;
-      }
-      if (max > 1) {
-        labelText += ` [${idx + 1}]`;
-      }
-
-      label.textContent = labelText;
+      // ✅ Use innerHTML instead of textContent to allow HTML formatting
+      label.innerHTML = formatPromptWithKeyword(prompt, kwd, idx, max);
       label.htmlFor = instanceId;
       container.appendChild(label);
     }
+
+    // Update renderElemParameter function around line 2670:
 
     function renderElemParameter(parm, kwd, idx, container, prompt, dft, max = 1) {
       console.log(`[clPrompter] Processing ELEM parameter: ${kwd}, instance: ${idx}, max: ${max}`);
@@ -2465,18 +2555,11 @@
       const fieldset = document.createElement("fieldset");
       fieldset.className = "elem-group";
 
-      // Add legend
+      // Add legend with highlighted keyword
       const legend = document.createElement("legend");
-      let legendText = prompt;
-      if (idx === 0 && kwd && !prompt.includes(`(${kwd})`)) {
-        legendText += ` (${kwd})`;
-      }
-      if (max > 1) {
-        legendText += ` [${idx + 1}]`;
-      }
-      legend.textContent = legendText;
+      // ✅ Use innerHTML instead of textContent
+      legend.innerHTML = formatPromptWithKeyword(prompt, kwd, idx, max);
       fieldset.appendChild(legend);
-
 
       const isMultiInstance = max > 1;
       addElemChildren(fieldset, parm, kwd, idx, isMultiInstance);
@@ -2486,7 +2569,13 @@
     }
 
     function addSngValControl(container, parm, kwd, prompt, dft, sngVal, instanceIdx = 0, isMultiInstance = false) {
-      console.log(`[clPrompter] Adding SngVal for ${kwd}, instance: ${instanceIdx}`);
+      console.log(`[clPrompter] Adding SngVal for ${kwd}, instance: ${instanceIdx}, dft: "${dft}"`);
+
+      // ✅ Use PARM-level default if no explicit dft provided
+      let effectiveDefault = dft;
+      if (!effectiveDefault) {
+        effectiveDefault = parm.getAttribute("Dft");
+      }
 
       const sngValDiv = document.createElement("div");
       sngValDiv.className = "form-div";
@@ -2499,45 +2588,42 @@
       sngValLabel.htmlFor = sngValId;
       sngValDiv.appendChild(sngValLabel);
 
-      // Create VS Code Elements combobox for SngVal
       const sngValSelect = document.createElement("vscode-single-select");
       sngValSelect.id = sngValId;
       sngValSelect.name = sngValId;
       sngValSelect.setAttribute("combobox", "");
 
-      if (dft) {
-        sngValSelect.setAttribute('data-default', dft);
+      // ✅ Set default using effective default
+      if (effectiveDefault) {
+        sngValSelect.setAttribute('data-default', effectiveDefault);
       }
 
-      // ✅ Add empty option first
+      // Add empty option first
       const emptyOption = document.createElement("vscode-option");
       emptyOption.value = "";
-      emptyOption.textContent = "(specify individual elements)"; // ✅ More descriptive text
+      emptyOption.textContent = "(specify individual elements)";
       sngValSelect.appendChild(emptyOption);
 
-      // ✅ Add SngVal options in their own group
+      // Add SngVal options
       const sngValues = sngVal.querySelectorAll("Value");
       if (sngValues.length > 0) {
-        const sngGroup = document.createElement("optgroup");
-        sngGroup.label = "Single Values";
-
         sngValues.forEach(val => {
           const option = document.createElement("vscode-option");
           option.value = val.getAttribute("Val");
           option.textContent = val.getAttribute("Val");
           option.setAttribute("data-sngval", "true");
 
-          // Select default option
-          if (val.getAttribute("Val") === dft) {
+          // ✅ Select effective default option
+          if (val.getAttribute("Val") === effectiveDefault) {
             option.selected = true;
-            sngValSelect.value = dft;
+            sngValSelect.value = effectiveDefault;
+            console.log(`[clPrompter] ${kwd} - Set SngVal default to: "${effectiveDefault}"`);
           }
 
-          sngGroup.appendChild(option);
+          sngValSelect.appendChild(option);
         });
-
-        sngValSelect.appendChild(sngGroup);
       }
+
 
       // ✅ Add Values options (if any)
       const values = parm.querySelector("Values");
@@ -2860,24 +2946,30 @@
       fieldset.className = "qual-group";
 
       const legend = document.createElement("legend");
-      let legendText = prompt;
-      if (kwd && !prompt.includes(`(${kwd})`)) {
-        legendText += ` (${kwd})`;
-      }
-      if (max > 1) {
-        legendText += ` [${instanceIdx + 1}]`;
-      }
-      legend.textContent = legendText;
+      legend.innerHTML = formatPromptWithKeyword(prompt, kwd, instanceIdx, max);
       fieldset.appendChild(legend);
 
       const isMultiInstance = max > 1;
 
       for (let q = 0; q < quals.length; q++) {
         const qual = quals[q];
-        const qualPrompt = (q === 0)
-          ? prompt  // First QUAL uses parameter prompt
-          : (qual.getAttribute("Prompt") || `Qualifier ${q + 1}`); // Others use their own
 
+        // ✅ FIXED: Better prompt resolution logic
+        let qualPrompt;
+
+        if (q === 0) {
+          // First QUAL uses parameter prompt
+          qualPrompt = prompt;
+        } else {
+          // ✅ Try multiple sources for the prompt
+          qualPrompt = qual.getAttribute("Prompt") ||
+            qual.getAttribute("PromptText") ||
+            qual.getAttribute("Text") ||
+            qual.getAttribute("Name") ||
+            `Qualifier ${q + 1}`;
+
+          console.log(`[clPrompter] QUAL${q} prompt sources - Prompt: "${qual.getAttribute("Prompt")}", PromptText: "${qual.getAttribute("PromptText")}", Text: "${qual.getAttribute("Text")}", Name: "${qual.getAttribute("Name")}", Final: "${qualPrompt}"`);
+        }
 
         const qualType = qual.getAttribute("Type") || "CHAR";
         const qualLen = qual.getAttribute("Len") || "";
@@ -2886,7 +2978,7 @@
         // ✅ Use instance suffix only for multi-instance parameters
         const qualName = isMultiInstance ? `${kwd}_QUAL${q}_${instanceIdx}` : `${kwd}_QUAL${q}`;
 
-        console.log(`[clPrompter] Creating qual ${q}: ${qualName}, type: ${qualType}, default: ${qualDft}`);
+        console.log(`[clPrompter] Creating qual ${q}: ${qualName}, type: ${qualType}, prompt: "${qualPrompt}", default: ${qualDft}`);
 
         const qualDiv = document.createElement("div");
         qualDiv.className = "form-div";
@@ -3100,7 +3192,7 @@
         }
 
         // ✅ Skip NULL parameters (Type="Null" from TYPE(*NULL))
-        if (type === "Null") {
+        if (type.toLowerCase() === "null") {
           console.log(`[clPrompter] Skipping NULL parameter: ${kwd} (Type=${type})`);
           return; // Skip this parameter
         }
@@ -3166,6 +3258,16 @@
     }
 
     function isUnchangedDefault(input, value) {
+      // ✅ CRITICAL: Check if this parameter was in the original command
+      const parmKwd = input.name.split('_')[0]; // Get base parameter name
+      const wasInOriginal = originalParamMap.hasOwnProperty(parmKwd);
+
+      // ✅ If it was in the original command, never treat it as "unchanged default"
+      if (wasInOriginal) {
+        console.log(`[clPrompter] ${parmKwd} was in original command - preserving it`);
+        return false;
+      }
+
       const defaultValue = input.getAttribute('data-default');
       if (!defaultValue) return false;
 
@@ -3245,6 +3347,21 @@
         console.log(`[clPrompter] Range validation passed: ${value} is within range ${fromValue}-${toValue}`);
         return true;
       }
+    }
+    function getDefaultValue(input) {
+      // Check data-default attribute first
+      const dataDefault = input.getAttribute('data-default');
+      if (dataDefault) return dataDefault;
+
+      // Check if it's a select with a default option
+      if (input.tagName === 'SELECT' || input.tagName === 'VSCODE-DROPDOWN') {
+        const defaultOption = input.querySelector('option[selected]') ||
+          input.querySelector('vscode-option[selected]');
+        if (defaultOption) return defaultOption.value;
+      }
+
+      // For other inputs, check the default value
+      return input.defaultValue || '';
     }
 
     // --- SUBMIT HANDLER ---
@@ -3364,12 +3481,19 @@
             return;
           }
 
+          // Around line 3220 in prompter.html submit handler:
+
           const wasInOriginal = originalParamMap.hasOwnProperty(parmKwd);
+
+          // ✅ FIXED: Only include if value is non-empty AND different from default
           if (val !== "" && val !== "''" && val !== '""') {
-            // ✅ Only include if it's NOT an unchanged default
-            if (!isUnchangedDefault(i, val)) {
+            // ✅ Check if this value is different from the default
+            const defaultValue = getDefaultValue(i); // You'll need this helper function
+            const isChangedFromDefault = val !== defaultValue;
+
+            if (isChangedFromDefault || wasInOriginal) {
               values[parmKwd] = val;
-              console.log(`[clPrompter] Including changed parameter: ${parmKwd} = "${val}"`);
+              console.log(`[clPrompter] Including parameter: ${parmKwd} = "${val}" (changed=${isChangedFromDefault}, wasInOriginal=${wasInOriginal})`);
             } else {
               console.log(`[clPrompter] Skipping unchanged default: ${parmKwd} = "${val}"`);
             }
@@ -3556,6 +3680,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       console.log("[clPrompter] DOM Content Loaded");
+      detectVSCodeTheme();
 
       // ✅ Check ALL VS Code Elements components
       setTimeout(() => {
