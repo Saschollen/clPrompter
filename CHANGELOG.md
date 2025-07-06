@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.13] - 2025-07-06
+### Changed
+- All hardcoded color styles was removed from JavaScript; all visual styling for is now handled in CSS using VS Code theme variables.
+- Added `.nested-elem-group` CSS class to `style.css` for theme-aware background, border, and foreground, matching `.elem-group` and `.qual-group`.
+- Updated `main.js` to only set the class for nested ELEM fieldsets, with no inline style properties.
+
+### Fixed
+- Ensured nested ELEM group appearance is consistent and accessible in all VS Code theme modes (light, dark, high-contrast).
+
+### Notes
+- You can now further refine the `.nested-elem-group` style in `style.css` for spacing or contrast as needed. All color and border logic is now theme-driven.
+
+### Added
+- New `kwdColorAutoAdjust` setting: allows users to control whether the keyword highlight color is auto-adjusted for contrast between different VS Code themes or strictly uses their custom user-specified color (specified on the existing `kwdColor` setting).
+- `F3=Cancel` is now enabled during prompting, giving end-users a more natural "muscle memory" way of cancelling out of the prompter.
+
 ## [0.0.12] - 2025-07-05
 ### Added
 - Initial CHANGELOG.md file.
@@ -29,4 +45,4 @@ All notable changes to this project will be documented in this file.
 ---
 
 ## [0.0.11] - 2024-??-??
-- Previous version (see earlier commit history for details).
+- Previous versions (see earlier commit history for details).

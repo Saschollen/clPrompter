@@ -60,11 +60,10 @@ import * as tooltips from './tooltips.js';
       // Handle configuration updates
       if (message.type === "configuration") {
         console.log("[clPrompter] Received configuration:", message.config);
-
-        if (message.config.keywordColor) {
-          // ✅ Apply custom keyword color
-          document.documentElement.style.setProperty('--keyword-color', message.config.keywordColor);
-          console.log(`[clPrompter] Set keyword color to: ${message.config.keywordColor}`);
+        const userColor = message.config.keywordColor;
+        const autoAdjust = typeof message.config.kwdColorAutoAdjust === 'boolean' ? message.config.kwdColorAutoAdjust : true;
+        if (userColor) {
+          setKeywordColorVariants(userColor, autoAdjust);
         }
       }
 
@@ -87,9 +86,98 @@ import * as tooltips from './tooltips.js';
         }
 
         if (message.config && message.config.keywordColor) {
-          console.log(`[clPrompter] Set keyword color to: ${message.config.keywordColor}`);
-          document.documentElement.style.setProperty('--keyword-color', message.config.keywordColor);
+          setKeywordColorVariants(message.config.keywordColor);
         }
+
+// --- Advanced: Generate theme variants for keyword color ---
+function setKeywordColorVariants(baseColor, autoAdjust = true) {
+  // Helper: Clamp value
+  function clamp(val, min, max) {
+    return Math.max(min, Math.min(max, val));
+  }
+
+  // Helper: Convert hex to RGB
+  function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) {
+      hex = hex.split('').map(x => x + x).join('');
+    }
+    const num = parseInt(hex, 16);
+    return {
+      r: (num >> 16) & 255,
+      g: (num >> 8) & 255,
+      b: num & 255
+    };
+  }
+
+  // Helper: Convert named color to hex (uses a hidden element)
+  function namedColorToHex(colorName) {
+    // Fast path for hex
+    if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(colorName)) {
+      return colorName;
+    }
+    // Create a dummy element to resolve the color
+    const temp = document.createElement('div');
+    temp.style.color = colorName;
+    document.body.appendChild(temp);
+    // Get computed color
+    const computed = getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+    // Parse rgb(a) string
+    const match = computed.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+    if (match) {
+      const r = parseInt(match[1], 10);
+      const g = parseInt(match[2], 10);
+      const b = parseInt(match[3], 10);
+      return rgbToHex({ r, g, b });
+    }
+    // Fallback: return original
+    return colorName;
+  }
+
+  // Helper: Adjust brightness (factor > 1 = lighter, < 1 = darker)
+  function adjustBrightness({ r, g, b }, factor) {
+    return {
+      r: clamp(Math.round(r * factor), 0, 255),
+      g: clamp(Math.round(g * factor), 0, 255),
+      b: clamp(Math.round(b * factor), 0, 255)
+    };
+  }
+
+  // Helper: Convert RGB to hex
+  function rgbToHex({ r, g, b }) {
+    return (
+      '#' +
+      r.toString(16).padStart(2, '0') +
+      g.toString(16).padStart(2, '0') +
+      b.toString(16).padStart(2, '0')
+    );
+  }
+
+  // Accept both hex and named colors
+  let hexColor = baseColor;
+  if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(baseColor)) {
+    hexColor = namedColorToHex(baseColor);
+  }
+
+  let light, dark, highContrast;
+  if (autoAdjust) {
+    let rgb = hexToRgb(hexColor);
+    light = rgbToHex(adjustBrightness(rgb, 0.85));
+    dark = rgbToHex(adjustBrightness(rgb, 1.35));
+    highContrast = rgbToHex(adjustBrightness(rgb, 1.7));
+  } else {
+    light = dark = highContrast = hexColor;
+  }
+
+  // Set CSS variables for each theme
+  document.documentElement.style.setProperty('--keyword-color', hexColor);
+  document.documentElement.style.setProperty('--keyword-color-light', light);
+  document.documentElement.style.setProperty('--keyword-color-dark', dark);
+  document.documentElement.style.setProperty('--keyword-color-high-contrast', highContrast);
+
+  console.log(`[clPrompter] Set keyword color variants: base=${hexColor}, light=${light}, dark=${dark}, high-contrast=${highContrast}, autoAdjust=${autoAdjust}`);
+}
 
         console.log(`[clPrompter] Updated cmdName to: ${cmdName}`);
         console.log(`[clPrompter] Pre-processed allowedValsMap keys:`, Object.keys(allowedValsMap));
@@ -2108,9 +2196,6 @@ import * as tooltips from './tooltips.js';
           // Create a sub-fieldset for the nested ELEM
           const subFieldset = document.createElement("fieldset");
           subFieldset.className = "elem-group nested-elem-group";
-          subFieldset.style.marginLeft = "15px";
-          subFieldset.style.border = "1px solid #aaa";
-          subFieldset.style.backgroundColor = "#f5f5f5";
 
           const subLegend = document.createElement("legend");
           subLegend.textContent = elemPrompt;
@@ -3033,6 +3118,19 @@ import * as tooltips from './tooltips.js';
       vscode.postMessage({ type: "cancel" });
     });
 
+    // --- Keyboard shortcut: F3 cancels prompt (same as Cancel button) ---
+    document.addEventListener('keydown', function(e) {
+      // Only trigger on F3, and only if the prompt is visible
+      if (e.key === 'F3' && !e.repeat) {
+        const cancelBtn = document.getElementById('cancelBtn');
+        if (cancelBtn && cancelBtn.offsetParent !== null) {
+          cancelBtn.click();
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    });
+
     window.addEventListener('DOMContentLoaded', () => {
       console.log("[clPrompter] DOM Content Loaded");
       detectVSCodeTheme();
@@ -3062,7 +3160,3 @@ import * as tooltips from './tooltips.js';
       vscode.postMessage({ type: 'webviewReady' });
       console.log('[clPrompter] Sent webviewReady message');
     });
-
-
-
-// ...existing code...

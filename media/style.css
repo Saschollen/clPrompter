@@ -1,311 +1,331 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  padding: 10px;
+}
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      padding: 10px;
-    }
+vscode-single-select {
+  --vscode-font-weight: 400;
+  --vscode-foreground: #1db200;
+}
 
-    vscode-single-select {
-      --vscode-font-weight: 400;
-      --vscode-foreground: #006400;
-    }
+vscode-textfield {
+  --vscode-settings-textInputForeground: #1db200; /* Green, tweak as desired */
+  --vscode-input-placeholderForeground: #989898;
+  --vscode-font-weight: 400;
+}
 
-    vscode-textarea {
-      --vscode-editor-background-size: #FFFFFF;
-      --vscode-editor-foreground: #006400;
-      --vscode-input-placeholderForeground: #989898;
-      --vscode-font-weight: 400;
-      --vscode-settings-textInputForeground: #006400;
-    }
+vscode-textarea {
+  --vscode-settings-textInputForeground: #1db200; /* Green, tweak as desired */
+  --vscode-input-placeholderForeground: #989898;
+  --vscode-font-weight: 400;
+}
 
-    vscode-textfield {
-      --vscode-settings-textInputBackground: #FFFFFF;
-      --vscode-settings-textInputForeground: #006400;
-      --vscode-input-placeholderForeground: #989898;
-      --vscode-font-weight: 400;
 
-    }
+/* ✅ Keyword highlighting in prompts (now blue-themed) */
+.keyword-highlight {
+  color: var(--keyword-color, #1a237e);
+  /* Default: dark blue */
+  font-weight: bold;
+}
 
-    /* ✅ Keyword highlighting in prompts */
-    .keyword-highlight {
-      color: var(--keyword-color, #22aa22);
-      /* Default: dark green */
-      font-weight: bold;
-    }
+/* ✅ Theme-aware keyword colors (blue variants) */
+body[data-vscode-theme-kind="vscode-light"] .keyword-highlight {
+  color: var(--keyword-color, #0d47a1);
+  /* Deeper blue for light theme */
+}
 
-    /* ✅ Theme-aware keyword colors */
-    body[data-vscode-theme-kind="vscode-light"] .keyword-highlight {
-      color: var(--keyword-color, #0d7d0d);
-      /* Darker green for light theme */
-    }
+body[data-vscode-theme-kind="vscode-dark"] .keyword-highlight {
+  color: var(--keyword-color, #90caf9);
+  /* Lighter blue for dark theme */
+}
 
-    body[data-vscode-theme-kind="vscode-dark"] .keyword-highlight {
-      color: var(--keyword-color, #22aa22);
-      /* Brighter green for dark theme */
-    }
+body[data-vscode-theme-kind="vscode-high-contrast"] .keyword-highlight {
+  color: var(--keyword-color, #2979ff);
+  /* High contrast blue */
+}
 
-    body[data-vscode-theme-kind="vscode-high-contrast"] .keyword-highlight {
-      color: var(--keyword-color, #00ff00);
-      /* High contrast green */
-    }
+/* ✅ Enhanced tooltip styles with higher z-index */
+.range-tooltip {
+  position: fixed;
+  background: #1976d2;
+  color: #ffffff;
+  border: 1px solid #1565c0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 15000;
+  /* ✅ Higher than dropdown z-index (1000) */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 320px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateY(-4px);
+}
 
-    /* ✅ Enhanced tooltip styles with higher z-index */
-    .range-tooltip {
-      position: fixed;
-      background: #1976d2;
-      color: #ffffff;
-      border: 1px solid #1565c0;
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: 500;
-      z-index: 15000;
-      /* ✅ Higher than dropdown z-index (1000) */
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      max-width: 320px;
-      white-space: nowrap;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      transform: translateY(-4px);
-    }
+.range-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
 
-    .range-tooltip.show {
-      opacity: 1;
-      transform: translateY(0);
-    }
+/* ✅ Arrow pointing up (default) */
+.range-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid #1565c0;
+}
 
-    /* ✅ Arrow pointing up (default) */
-    .range-tooltip::before {
-      content: '';
-      position: absolute;
-      top: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-bottom: 6px solid #1565c0;
-    }
+.range-tooltip::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #1976d2;
+}
 
-    .range-tooltip::after {
-      content: '';
-      position: absolute;
-      top: -5px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-bottom: 5px solid #1976d2;
-    }
+/* ✅ Arrow pointing down (when tooltip appears above input) */
+.range-tooltip.tooltip-above::before {
+  top: auto;
+  bottom: -6px;
+  border-bottom: none;
+  border-top: 6px solid #1565c0;
+}
 
-    /* ✅ Arrow pointing down (when tooltip appears above input) */
-    .range-tooltip.tooltip-above::before {
-      top: auto;
-      bottom: -6px;
-      border-bottom: none;
-      border-top: 6px solid #1565c0;
-    }
+.range-tooltip.tooltip-above::after {
+  top: auto;
+  bottom: -5px;
+  border-bottom: none;
+  border-top: 5px solid #1976d2;
+}
 
-    .range-tooltip.tooltip-above::after {
-      top: auto;
-      bottom: -5px;
-      border-bottom: none;
-      border-top: 5px solid #1976d2;
-    }
+/* ✅ Enhanced range input states */
+[data-range-from][data-range-to] {
+  transition: all 0.3s ease;
+  position: relative;
+}
 
-    /* ✅ Enhanced range input states */
-    [data-range-from][data-range-to] {
-      transition: all 0.3s ease;
-      position: relative;
-    }
+[data-range-from][data-range-to]:hover {
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
 
-    [data-range-from][data-range-to]:hover {
-      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
-    }
+[data-range-from][data-range-to]:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.4);
+}
 
-    [data-range-from][data-range-to]:focus {
-      outline: none;
-      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.4);
-    }
+[data-range-from][data-range-to].invalid {
+  border-color: #d32f2f !important;
+  background-color: #ffebee !important;
+  box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.3) !important;
+}
 
-    [data-range-from][data-range-to].invalid {
-      border-color: #d32f2f !important;
-      background-color: #ffebee !important;
-      box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.3) !important;
-    }
+.input-xs {
+  width: 80px;
+  min-width: 80px;
+}
 
-    .input-xs {
-      width: 80px;
-      min-width: 80px;
-    }
+/* 1-6 chars (small numbers) */
+.input-sm {
+  width: 120px;
+  min-width: 120px;
+}
 
-    /* 1-6 chars (small numbers) */
-    .input-sm {
-      width: 120px;
-      min-width: 120px;
-    }
+/* 7-12 chars (medium numbers/names) */
+.input-md {
+  width: 200px;
+  min-width: 200px;
+}
 
-    /* 7-12 chars (medium numbers/names) */
-    .input-md {
-      width: 200px;
-      min-width: 200px;
-    }
+/* 13-25 chars (longer names) */
+.input-lg {
+  width: 300px;
+  min-width: 300px;
+}
 
-    /* 13-25 chars (longer names) */
-    .input-lg {
-      width: 300px;
-      min-width: 300px;
-    }
+/* 26-50 chars (short descriptions) */
+.input-xl {
+  width: 400px;
+  min-width: 400px;
+}
 
-    /* 26-50 chars (short descriptions) */
-    .input-xl {
-      width: 400px;
-      min-width: 400px;
-    }
+/* 51-80 chars (medium text) */
+.input-full {
+  width: 100%;
+  min-width: 100%;
+}
 
-    /* 51-80 chars (medium text) */
-    .input-full {
-      width: 100%;
-      min-width: 100%;
-    }
+/* 81+ chars (long text/commands) */
+@keyframes shake {
 
-    /* 81+ chars (long text/commands) */
-    @keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
 
-      0%,
-      100% {
-        transform: translateX(0);
-      }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-2px);
+  }
 
-      10%,
-      30%,
-      50%,
-      70%,
-      90% {
-        transform: translateX(-2px);
-      }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(2px);
+  }
+}
 
-      20%,
-      40%,
-      60%,
-      80% {
-        transform: translateX(2px);
-      }
-    }
+/* ✅ Enhanced styling for range validation */
+[data-range-from][data-range-to] {
+  transition: all 0.3s ease;
+}
 
-    /* ✅ Enhanced styling for range validation */
-    [data-range-from][data-range-to] {
-      transition: all 0.3s ease;
-    }
+[data-range-from][data-range-to]:invalid {
+  border-color: #ff0000 !important;
+  background-color: #ffebee !important;
+}
 
-    [data-range-from][data-range-to]:invalid {
-      border-color: #ff0000 !important;
-      background-color: #ffebee !important;
-    }
+.main-container {
+  margin-bottom: 1em;
+}
 
-    .main-container {
-      margin-bottom: 1em;
-    }
+.label-input {
+  width: 12ch;
+}
 
-    .label-input {
-      width: 12ch;
-    }
+.main-title {
+  margin-top: 0;
+  margin-bottom: 0.5em;
+}
 
-    .main-title {
-      margin-top: 0;
-      margin-bottom: 0.5em;
-    }
+.parm-multi-group {
+  border: 1px dashed #bbb;
+  margin-bottom: 1em;
+  padding: 0.5em;
+}
 
-    .parm-multi-group {
-      border: 1px dashed #bbb;
-      margin-bottom: 1em;
-      padding: 0.5em;
-    }
+.parm-instance {
+  margin-bottom: 0.2em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px dotted #ddd;
+}
 
-    .parm-instance {
-      margin-bottom: 0.2em;
-      padding-bottom: 0.2em;
-      border-bottom: 1px dotted #ddd;
-    }
+.add-parm-btn,
+.remove-parm-btn {
+  font-size: 0.9em;
+  padding: 0 0.3em;
+  border-radius: 50%;
+  width: 1.5em;
+  height: 1.5em;
+  min-width: 0;
+  min-height: 0;
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-block;
+  margin: 0 0.2em 0 0;
+  box-sizing: border-box;
+  border: 1px solid #888;
+  background: #f5f5f5;
+}
 
-    .add-parm-btn,
-    .remove-parm-btn {
-      font-size: 0.9em;
-      padding: 0 0.3em;
-      border-radius: 50%;
-      width: 1.5em;
-      height: 1.5em;
-      min-width: 0;
-      min-height: 0;
-      line-height: 1;
-      vertical-align: middle;
-      display: inline-block;
-      margin: 0 0.2em 0 0;
-      box-sizing: border-box;
-      border: 1px solid #888;
-      background: #f5f5f5;
-    }
+.add-parm-btn:focus,
+.remove-parm-btn:focus {
+  outline: none;
+  border-color: #0078d4;
+}
 
-    .add-parm-btn:focus,
-    .remove-parm-btn:focus {
-      outline: none;
-      border-color: #0078d4;
-    }
+.form-label {
+  display: inline-block;
+  width: 43ch;
+  vertical-align: middle;
+  margin-bottom: 0.2em;
+}
 
-    .form-label {
-      display: inline-block;
-      width: 43ch;
-      vertical-align: middle;
-      margin-bottom: 0.2em;
-    }
+.form-input {
+  vertical-align: middle;
+  margin-bottom: 0.2em;
+}
 
-    .form-input {
-      vertical-align: middle;
-      margin-bottom: 0.2em;
-    }
+.form-div {
+  margin-bottom: 0.2em;
+}
 
-    .form-div {
-      margin-bottom: 0.2em;
-    }
 
-    .elem-group {
-      border: 1.5px solid #bbb;
-      border-radius: 6px;
-      margin-bottom: 0.2em;
-      padding: 0.8em 1em 0.2em 1em;
-      background: #f8f8f8;
-    }
+button {
+  margin-top: 15px;
+  font-size: 1.1em;
+}
 
-    .elem-group legend {
-      font-weight: bold;
-      color: #333;
-      padding: 0 0.2em;
-    }
+.clvar-input {
+  margin-left: 0.5em;
+  width: 16ch;
+}
 
-    button {
-      margin-top: 15px;
-      font-size: 1.1em;
-    }
+.qual-group .form-label {
+  width: auto;
+  min-width: 10ch;
+  margin-bottom: 0;
+  vertical-align: middle;
+}
 
-    .clvar-input {
-      margin-left: 0.5em;
-      width: 16ch;
-    }
+.elem-group {
+  border: 1.5px solid var(--vscode-editorWidget-border, #bbb);
+  border-radius: 6px;
+  margin-bottom: 0.2em;
+  padding: 0.8em 1em 0.2em 1em;
+  background: var(--vscode-editorWidget-background, #ffe);
+}
 
-    .qual-group .form-label {
-      width: auto;
-      min-width: 10ch;
-      margin-bottom: 0;
-      vertical-align: middle;
-    }
+.elem-group legend {
+  font-weight: bold;
+  color: var(--vscode-editor-foreground, #333);
+  padding: 0 0.2em;
+}
 
-    .qual-group>div {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.2em;
-      border: 1px dashed red;
-      background: #ffe;
-    }
+.qual-group>div {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.2em;
+  border: 1px dashed var(--vscode-editorWidget-border, red);
+  background: var(--vscode-editorWidget-background, #ffe);
+}
+
+/*
+ * .nested-elem-group: Theme-aware styling for nested ELEM fieldsets in CL Prompter
+ * - Uses VS Code theme variables for background, border, and foreground
+ * - Ensures good contrast in all theme modes
+ * - No hardcoded colors
+ */
+
+.nested-elem-group {
+  border: 1.5px solid var(--vscode-editorWidget-border, #bbb);
+  border-radius: 6px;
+  margin-bottom: 0.2em;
+  margin-left: 1.5em;
+  padding: 0.7em 1em 0.2em 1em;
+  background: var(--vscode-editorWidget-background, #f9f9f9);
+}
+
+.nested-elem-group legend {
+  font-weight: bold;
+  color: var(--vscode-editor-foreground, #333);
+  padding: 0 0.2em;
+  font-size: 0.98em;
+}
