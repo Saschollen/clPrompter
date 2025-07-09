@@ -265,11 +265,10 @@ function generateQualInstructions(
 
   for (let q = 0; q < parts.length; q++) {
     const qName = `${kwd}_QUAL${q}`;
-    // ✅ RESTORE reverse indexing - QUAL0 gets parts[length-1-0], QUAL1 gets parts[length-1-1]
-    const reverseIndex = parts.length - 1 - q;
-    const value = parts[reverseIndex] !== undefined ? parts[reverseIndex] : "";
+    // Use natural order: QUAL0 gets parts[0], QUAL1 gets parts[1], etc.
+    const value = parts[q] !== undefined ? parts[q] : "";
 
-    console.log(`[clPrompter] ${kwd} - QUAL${q}: qName=${qName}, reverseIndex=${reverseIndex}, value="${value}"`);
+    console.log(`[clPrompter] ${kwd} - QUAL${q}: qName=${qName}, value="${value}"`);
 
     instructions.push({
       type: 'qual',

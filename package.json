@@ -2,7 +2,7 @@
   "name": "clprompter",
   "displayName": "Bob Cozzi's CL Prompter for IBM i",
   "description": "Bob Cozzi's CL Prompter for IBM i CL commands",
-  "version": "0.0.13",
+  "version": "0.0.15",
   "author": {
     "name": "Bob Cozzi",
     "url": "https://github.com/bobcozzi"
@@ -56,14 +56,54 @@
         },
         "clPrompter.kwdColor": {
           "type": "string",
+          "format": "color",
           "default": "#1a237e",
           "description": "Parameter keyword color in prompter.  Use CSS color values like ##1a237e, blue, or rgb(34,170,34).",
+          "pattern": "^(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3}|[a-zA-Z]+|rgb\\(\\d+,\\s*\\d+,\\s*\\d+\\)|rgba\\(\\d+,\\s*\\d+,\\s*\\d+,\\s*[0-9.]+\\))$"
+        },
+        "clPrompter.kwdValueColor": {
+          "type": "string",
+          "format": "color",
+          "default": "#1a237e",
+          "description": "Parameter value color in prompter.  Use CSS color values like ##1a237e, blue, or rgb(34,170,34).",
           "pattern": "^(#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{3}|[a-zA-Z]+|rgb\\(\\d+,\\s*\\d+,\\s*\\d+\\)|rgba\\(\\d+,\\s*\\d+,\\s*\\d+,\\s*[0-9.]+\\))$"
         },
         "clPrompter.kwdColorAutoAdjust": {
           "type": "boolean",
           "default": true,
           "description": "Parameter keyword color Auto-adjust for best contrast in dark/light/high-contrast themes. If false, uses your color exactly as specified."
+        },
+        "clPrompter.cmdLabelIndent": {
+          "type": "number",
+          "default": 2,
+          "description": "Location of the Label (if any) for the CL Command after prompting. Default: 2 (SEU classic)."
+        },
+        "clPrompter.cmdIndent": {
+          "type": "number",
+          "default": 14,
+          "description": "First line command name indent after prompting. Default: 14 (SEU classic)."
+        },
+        "clPrompter.cmdIndentParm": {
+          "type": "number",
+          "default": 25,
+          "minimum": 0,
+          "description": "Location of parameter that follows the command name. 0 = single space after command, otherwise column (min 25, SEU classic: 27)."
+        },
+        "clPrompter.cmdContIndent": {
+          "type": "number",
+          "default": 27,
+          "description": "Secondary CL command line parameter indent after prompting. Default: 27 (SEU classic)."
+        },
+        "clPrompter.cmdRightMargin": {
+          "type": "number",
+          "default": 72,
+          "description": "Right margin for command formatting. Default: 72 (SEU classic)."
+        },
+        "clPrompter.cmdKwdCase": {
+          "type": "number",
+          "default": 0,
+          "enum": [0, 1],
+          "description": "Controls case conversion for CL command parameter names (keywords): 0 = UPPERCASE, 1 = lowercase."
         }
       }
     },

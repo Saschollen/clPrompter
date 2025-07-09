@@ -83,8 +83,6 @@ export function parseCLParms(
 
   // Parse parameters: KEYWORD(value) KEYWORD(value) ...
   const paramMap: ParsedParms = {};
-  const paramRegex = /([A-Z0-9_]+)\s*\(([^)]*)\)/gi;
-  let match: RegExpExecArray | null;
   let i = 0;
   while (i < cmd.length) {
     // Find the next keyword
@@ -110,10 +108,13 @@ export function parseCLParms(
     // --- Handle ELEM (multi-part, like FILE or LOG) FIRST ---
     if (meta && meta.Elems && meta.Elems.length > 0) {
       const vals = splitCLMultiInstance(val);
+      // If this is a multi-instance ELEM (Max > 1), preserve all groups
       paramMap[kwd] = vals.map((v, idx) => {
         const elemMeta = meta.Elems && meta.Elems[idx];
         if (elemMeta && elemMeta.Quals && elemMeta.Quals.length > 0) {
-          return splitQualifiedCLValue(v, elemMeta.Quals.length);
+          // QUAL inside ELEM: split and reverse for right-to-left mapping
+          const parts = splitQualifiedCLValue(v, elemMeta.Quals.length);
+          return parts.reverse();
         } else {
           return v.trim();
         }
@@ -130,8 +131,9 @@ export function parseCLParms(
 
     // --- Handle QUAL ---
     if (meta && meta.Quals && meta.Quals.length > 0) {
+      // Split and reverse for right-to-left mapping (QUAL0 is rightmost)
       const parts = splitQualifiedCLValue(val, meta.Quals.length);
-      paramMap[kwd] = parts;
+      paramMap[kwd] = parts.reverse();
       continue;
     }
 
@@ -210,5 +212,9 @@ export function splitQualifiedCLValue(val: string, numQuals: number): string[] {
     current += c;
   }
   parts.push(current.trim());
+  // Remove trailing empty/undefined parts (but preserve left-to-right order for now)
+  while (parts.length > 0 && (!parts[parts.length - 1] || parts[parts.length - 1].trim() === '')) {
+    parts.pop();
+  }
   return parts;
 }

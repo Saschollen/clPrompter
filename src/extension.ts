@@ -3,6 +3,7 @@ import { DOMParser } from '@xmldom/xmldom';
 
 import { buildAllowedValsMap } from './extractor';
 import { generatePopulationInstructions } from './populator';
+import { formatCLCmd, tokenizeCL, parseCL, formatCL_SEU } from './tokenizeCL';
 
 import { CodeForIBMi } from "@halcyontech/vscode-ibmi-types";
 export let code4i: CodeForIBMi;
@@ -277,13 +278,32 @@ export class ClPromptPanel {
                             undefined
                         );
 
-                        console.log('[submit] Generated command:', cmd);
+                        // Extract label and param string for formatting
+                        const label = extractCmdLabel(cmd);
+                        const cmdName = extractCmdName(cmd);
+                        // Remove label and command name from the start to get the param string
+                        let paramStr = cmd;
+                        if (label && label.length > 0) {
+                            paramStr = paramStr.substring(label.length + 1).trim();
+                        }
+                        if (cmdName && paramStr.startsWith(cmdName)) {
+                            paramStr = paramStr.substring(cmdName.length).trim();
+                        }
 
+                        // Import formatCLCmd lazily to avoid circular import issues
+                        // (If you already import it at the top, just use it directly)
+                        // eslint-disable-next-line @typescript-eslint/no-var-requires
+                        const { formatCLCmd } = require('./tokenizeCL');
+                        const formatted = formatCLCmd(label, cmdName, paramStr);
+
+                        // Use the active document's EOL
                         if (this._documentUri && this._selection) {
                             vscode.workspace.openTextDocument(this._documentUri).then(doc => {
                                 vscode.window.showTextDocument(doc, { preview: false }).then(editor => {
+                                    const eol = doc.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
+                                    const formattedWithEOL = formatted.split(/\r?\n/).join(eol);
                                     editor.edit(editBuilder => {
-                                        editBuilder.replace(this._selection!, cmd);
+                                        editBuilder.replace(this._selection!, formattedWithEOL);
                                     }).then(success => {
                                         if (!success) {
                                             vscode.window.showWarningMessage('Failed to insert CL command. Try again.');
@@ -296,7 +316,7 @@ export class ClPromptPanel {
                             vscode.window.showWarningMessage(
                                 'Could not insert command: original editor is no longer open.'
                             );
-                            vscode.env.clipboard.writeText(cmd);
+                            vscode.env.clipboard.writeText(formatted);
                             vscode.window.showInformationMessage('CL command copied to clipboard.');
                             this._panel.dispose();
                         }
