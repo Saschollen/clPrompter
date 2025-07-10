@@ -120,7 +120,7 @@ function groupNestedElems(values: Record<string, any>, parmTypeMap: ParmTypeMap)
   return { grouped, updatedTypeMap };
 }
 
-// ✅ Fixed buildCLCommand to handle arrays for ANY parameter type
+// ✅ Function build command string after prompter.
 export function buildCLCommand(
   cmdName: string,
   values: Record<string, any>,
@@ -466,69 +466,86 @@ function isCLExpression(val: string): boolean {
   return false;
 }
 
-// --- PATCH quoteIfNeeded ---
 export function quoteIfNeeded(val: string, allowedVals: string[] = [], parmType: string = ""): string {
-  const trimmed = val.trim();
-  const type = parmType.toUpperCase().replace(/^[*]/, "");
+    const trimmed = val.trim();
+    const type = parmType.toUpperCase().replace(/^[*]/, "");
 
-  function isCLQuotedString(s: string): boolean {
-    if (s.length < 2) return false;
-    if (!(s.startsWith("'") && s.endsWith("'"))) return false;
-    const inner = s.slice(1, -1);
-    let i = 0;
-    while (i < inner.length) {
-      if (inner[i] === "'") {
-        if (inner[i + 1] === "'") {
-          i += 2;
-        } else {
-          return false;
+    function isCLQuotedString(s: string): boolean {
+        if (s.length < 2 || !s.startsWith("'") || !s.endsWith("'")) return false;
+        const inner = s.slice(1, -1);
+        let i = 0;
+        while (i < inner.length) {
+            if (inner[i] === "'") {
+                if (inner[i + 1] === "'") {
+                    i += 2; // Escaped ''
+                } else {
+                    return false; // Unescaped single quote
+                }
+            } else {
+                i++;
+            }
         }
-      } else {
-        i++;
-      }
+        return true;
     }
-    return true;
-  }
 
-  // Never quote CL variables (e.g. &VARNAME)
-  if (/^&[A-Z][A-Z0-9]{0,9}$/i.test(trimmed)) {
-    return trimmed.toUpperCase();
-  }
-  if (allowedVals.includes(trimmed.toUpperCase()) || trimmed.startsWith("*")) {
-    return trimmed.toUpperCase();
-  }
-  if (isCLQuotedString(trimmed)) {
-    return trimmed;
-  }
-  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-    return trimmed;
-  }
-  // Do not quote qualified names (e.g., QGPL/CUSTMAST)
-  if (/^[A-Z0-9$#@_]+\/[A-Z0-9$#@_]+$/i.test(trimmed)) {
-    return trimmed.toUpperCase();
-  }
-  // Do not quote valid CL names (A-Z$#@, then up to 10 A-Z0-9$#@_)
-  if (/^[A-Z$#@][A-Z0-9$#@_]{0,10}$/i.test(trimmed)) {
-    return trimmed.toUpperCase();
-  }
-  if (["NAME", "PNAME", "CNAME"].includes(type) && isValidName(trimmed)) {
-    return trimmed.toUpperCase();
-  }
-  if (isCLExpression(trimmed)) {
-    return val;
-  }
-  if (trimmed === "''" || trimmed === "") {
-    return "";
-  }
-  // If already quoted, only escape inner quotes
-  if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
-    const inner = trimmed.slice(1, -1).replace(/'/g, "''");
-    return `'${inner}'`;
-  }
-  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
-    return trimmed;
-  }
-  return `'${trimmed.replace(/'/g, "''")}'`;
+    // 1. Do not quote CL variables like &MYVAR
+    if (/^&[A-Z][A-Z0-9]{0,9}$/i.test(trimmed)) {
+        return trimmed;
+    }
+
+    // 2. Do not quote allowed keywords or values (e.g. *YES, *FILE)
+    if (allowedVals.some(v => v.toUpperCase() === trimmed.toUpperCase()) || trimmed.startsWith("*")) {
+        return trimmed;
+    }
+
+    // 3. Already a properly quoted CL string
+    if (isCLQuotedString(trimmed)) {
+        return trimmed;
+    }
+
+    // 4. Double-quoted string from user input
+    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+        return trimmed;
+    }
+
+    // 5. Library-qualified name like QGPL/CUST
+    if (/^[A-Z0-9$#@_]+\/[A-Z0-9$#@_]+$/i.test(trimmed)) {
+        return trimmed;
+    }
+
+    // 6. Unqualified valid CL name
+    if (/^[A-Z$#@][A-Z0-9$#@_]{0,10}$/i.test(trimmed)) {
+        return trimmed;
+    }
+
+    // 7. If type hints at NAME-like field and it's valid
+    if (["NAME", "PNAME", "CNAME"].includes(type) && isValidName(trimmed)) {
+        return trimmed;
+    }
+
+    // 8. CL expression (e.g., *IF &X = &Y)
+    if (isCLExpression(trimmed)) {
+        return val;
+    }
+
+    // 9. Special case: empty quoted or blank
+    if (trimmed === "''" || trimmed === "") {
+        return "";
+    }
+
+    // 10. Numeric literal
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+        return trimmed;
+    }
+
+    // 11. Recover unescaped single-quoted string
+    if (trimmed.startsWith("'") && trimmed.endsWith("'")) {
+        const inner = trimmed.slice(1, -1).replace(/'/g, "''");
+        return `'${inner}'`;
+    }
+
+    // 12. Default: Quote and escape embedded single quotes
+    return `'${trimmed.replace(/'/g, "''")}'`;
 }
 
 

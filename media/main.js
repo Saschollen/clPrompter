@@ -10,7 +10,7 @@ function isContainerType(type) {
 import './vscode-elements.js';
 import * as promptHelpers from './promptHelpers.js';
 import * as tooltips from './tooltips.js';
-
+import * as txtarea from './textarea.js';
 
 let xmlDoc;
 let caseMode = "MONO";
@@ -898,10 +898,17 @@ function populateElemInputs(parm, kwd, vals, instanceIdx = 0, container = docume
     let input = container.querySelector(`[name="${elemName}"]`);
 
     if (!input) {
-      input = container.querySelector(`vscode-single-select[name="${elemName}"]`) ||
-        container.querySelector(`vscode-textfield[name="${elemName}"]`);
+      input = container.querySelector(`vscode-single-select[id="${elemName}"]`) ||
+        container.querySelector(`vscode-textfield[id="${elemName}"]`) ||
+        container.querySelector(`vscode-textarea[id="${elemName}"]`) ||
+        container.querySelector(`textarea[id="${elemName}"]`) ||
+        container.querySelector(`vscode-single-select[name="${elemName}"]`) ||
+        container.querySelector(`vscode-textfield[name="${elemName}"]`) ||
+        container.querySelector(`vscode-textarea[name="${elemName}"]`) ||
+        container.querySelector(`textarea[name="${elemName}"]`);
     }
 
+    console.log(`SETTING: tagName=${input.tagName.toLowerCase()} input.value = ${value}`)
     if (input) {
       if (input.tagName.toLowerCase() === 'vscode-single-select') {
         input.value = value;
@@ -972,7 +979,9 @@ function setElementValue(container, elemName, value) {
     // Try VS Code Elements
     const vsCodeSelect = container.querySelector(`vscode-single-select[name="${elemName}"]`);
     const vsCodeTextfield = container.querySelector(`vscode-textfield[name="${elemName}"]`);
-    input = vsCodeSelect || vsCodeTextfield;
+    const vsCodeTextarea = container.querySelector(`vscode-textarea[name="${elemName}"]`);
+    const htmlTextarea = container.querySelector(`textarea[name="${elemName}"]`);
+    input = vsCodeSelect || vsCodeTextfield || vsCodeTextarea || htmlTextarea;
   }
 
   if (!input) {
@@ -1501,8 +1510,9 @@ function handleSngvalLocking(container) {
   });
 }
 
-function createInputForType(type, name, value, len) {
-  console.log(`[clPrompter] createInputForType called: type=${type}, name=${name}, value=${value}, len=${len}`);
+function createInputForType(type, name, value, len, allowedVals = []) {
+
+  console.log(`[createInputForType] type=${type}, name=${name}, value=${value}, len=${len}`);
 
   try {
     const upperType = (type || 'CHAR').toUpperCase().replace('*', '');
@@ -1534,8 +1544,7 @@ function createInputForType(type, name, value, len) {
     const useVSCodeElements = customElements.get('vscode-textfield') &&
       customElements.get('vscode-textarea');
 
-    console.log(`[clPrompter] ${name} - Type: ${upperType}, EffectiveLen: ${effectiveLen}, WidthClass: ${widthClass}`);
-
+    console.log(`[clPrompter] Starting switch(${upperType}) for ${name},  EffectiveLen: ${effectiveLen}, WidthClass: ${widthClass}`);
     // ✅ First, handle all type-specific logic (no textarea creation here)
     switch (upperType) {
       case 'DEC':
@@ -1719,6 +1728,38 @@ function createInputForType(type, name, value, len) {
 
       default:
         console.log(`[clPrompter] Processing default/CHAR type: ${upperType}`);
+        if (
+          upperType === 'CHAR' &&
+          useVSCodeElements &&
+          customElements.get('vscode-textarea')
+        ) {
+          let actualLen = effectiveLen;
+          let declaredLen = parseInt(len, 10);
+          if (!isNaN(declaredLen) && declaredLen > 0) {
+            actualLen = Math.max(actualLen, declaredLen);
+          }
+          if (actualLen > 80) {
+            console.log(`[clPrompter] Creating vscode-textarea for ${name}, Len="${len}", Value="${value}", AllowedVals=${allowedVals}`);
+            input = document.createElement('vscode-textarea');
+            input.className = widthClass;
+            input.name = name;
+            input.id = name;
+            input.value = value || '';
+            input.setAttribute('maxlength', actualLen);
+            input.rows = Math.min(Math.ceil(actualLen / 80), 5);
+            input.style.minHeight = '60px';
+            input.setAttribute('data-default', value || '');
+            input.setAttribute('data-modified', 'false');
+            input.addEventListener('input', function () {
+              input.setAttribute('data-modified', 'true');
+            });
+            input.addEventListener('change', function () {
+              input.setAttribute('data-modified', 'true');
+            });
+            break;
+          }
+        }
+        // Fallback to textfield if not textarea
         if (useVSCodeElements) {
           input = document.createElement('vscode-textfield');
           input.className = widthClass;
@@ -1738,32 +1779,11 @@ function createInputForType(type, name, value, len) {
     if (!isNaN(declaredLen) && declaredLen > 0) {
       actualLen = Math.max(actualLen, declaredLen);
     }
+    console.log(`${actualLen} =CreatTextareaWithComboBox ${name}, Len="${len}", Value="${value}", AlwoedVals=${allowedVals}`);
 
-    if (actualLen > 80 && upperType !== 'NULL' && upperType !== 'ZEROELEM' && upperType !== 'LGL') {
-      console.log(`[clPrompter] Converting to textarea due to length: ${actualLen} > 80 for ${name}`);
-      if (useVSCodeElements && customElements.get('vscode-textarea')) {
-        const textarea = document.createElement('vscode-textarea');
-        textarea.className = 'input-full';
-        textarea.style.minHeight = '60px';
-        textarea.rows = Math.min(Math.ceil(actualLen / 80), 5);
-        // PATCH: Always set name to the parameter keyword (strip _INST0 etc. for Max=1)
-        textarea.name = name.includes('_INST0') ? name.replace('_INST0', '') : name;
-        textarea.id = name;
-        if (input.placeholder) textarea.placeholder = input.placeholder;
-        if (input.title) textarea.title = input.title;
-        input = textarea;
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.className = 'input-full';
-        textarea.style.minHeight = '60px';
-        textarea.rows = Math.min(Math.ceil(actualLen / 80), 5);
-        // PATCH: Always set name to the parameter keyword (strip _INST0 etc. for Max=1)
-        textarea.name = name.includes('_INST0') ? name.replace('_INST0', '') : name;
-        textarea.id = name;
-        if (input.placeholder) textarea.placeholder = input.placeholder;
-        if (input.title) textarea.title = input.title;
-        input = textarea;
-      }
+    if (actualLen > 80 && allowedVals && allowedVals.length > 1) {
+      console.log(`Calling CreatTextareaWithComboBox ${name}, Len="${len}", Value="${value}", AlwoedVals=${allowedVals}`);
+      return createTextareaWithCombobox(name, value, actualLen, allowedVals);
     }
 
     // ✅ Set common attributes (redundant for textarea, but safe for all)
@@ -2232,6 +2252,8 @@ function addElemChildren(container, parm, kwd, instanceIdx = 0, isMultiInstance 
 
 // ✅ Update createElemInput function around line 2890:
 function createElemInput(elem, elemName, elemType, elemLen, elemDft, kwd) {
+  console.log(`[createElemInput] kwd=${kwd} name=${elemName}, type=${elemType}, len=${elemLen}`);
+
   let allowedVals = allowedValsMap[elemName] || [];
   const noCustomInput = allowedVals._noCustomInput === true;
 
@@ -2284,6 +2306,11 @@ function createElemInput(elem, elemName, elemType, elemLen, elemDft, kwd) {
   }
 
   let elemInput;
+  const isOnlyNull = allowedVals.length === 1 && allowedVals[0] === '*NULL';
+  if (allowedVals.length === 0 || isOnlyNull) {
+    // Use createInputForType to get textarea if needed
+    return createInputForType('CHAR', elemName, elemDft, elemLen, allowedVals);
+  }
 
   // ✅ Calculate width using the correct allowedVals (from map OR XML)
   const effectiveLen = calculateFieldWidth(elem, allowedVals);
@@ -2304,7 +2331,7 @@ function createElemInput(elem, elemName, elemType, elemLen, elemDft, kwd) {
     const safeElemType = 'CHAR';
 
     // Create regular input with calculated width
-    elemInput = createInputForType(safeElemType, elemName, elemDft, elemLen);
+    elemInput = createInputForType(safeElemType, elemName, elemDft, elemLen, allowedVals);
 
     // Apply the calculated width class
     if (elemInput.className) {
@@ -2435,7 +2462,7 @@ function createQualInput(qual, qualName, qualType, qualLen, qualDft) {
       qualInput = createVSCodeSelect(qualName, qualSpcVal, qualDft);
     } else {
       // Create regular input
-      qualInput = createInputForType(qualType, qualName, qualDft, qualLen);
+      qualInput = createInputForType(qualType, qualName, qualDft, qualLen, allowedVals);
       if (qualDft) {
         qualInput.setAttribute('data-default', qualDft);
       }
@@ -2556,7 +2583,7 @@ function renderSimpleParameter(parm, kwd, container, dft, required, instanceId) 
       const parmType = parm.getAttribute("Type") || "CHAR";
       const parmLen = parm.getAttribute("Len") || "";
       console.log(`[clPrompter] ${kwd} - About to call createInputForType with type: ${parmType}`);
-      input = createInputForType(parmType, kwd, dft, parmLen);
+      input = createInputForType(parmType, kwd, dft, parmLen, allowedVals);
     }
 
     // --- PATCH: Enforce id/name pattern for all parameter input fields ---
@@ -2677,6 +2704,12 @@ function validateRestrictedInput(input) {
 
 function getInputValue(input) {
   console.log(`[clPrompter] getInputValue - tagName: ${input.tagName}, name: ${input.name}`);
+
+  if (!input) return '';
+  if (input.tagName.toLowerCase() === 'vscode-textarea' || input.tagName.toLowerCase() === 'textarea') {
+    // Remove all linefeeds and carriage returns
+    return (input.value || '').replace(/[\r\n]+/g, ' ');
+  }
 
   // Handle VS Code Elements combobox
   if (input.tagName.toLowerCase() === 'vscode-single-select') {
@@ -2836,9 +2869,23 @@ document.getElementById("submitBtn").addEventListener("click", e => {
           let elemVals = [];
           for (let e = 0; e < elems.length; e++) {
             const elemName = `${kwd}_ELEM${e}_${idx}`;
-            const input = inst.querySelector(`[name="${elemName}"]`);
-            if (!input) continue;
+
+            let input = inst.querySelector(`vscode-single-select[id="${elemName}"]`) ||
+              inst.querySelector(`vscode-textfield[id="${elemName}"]`) ||
+              inst.querySelector(`vscode-textarea[id="${elemName}"]`) ||
+              inst.querySelector(`textarea[id="${elemName}"]`) ||
+              inst.querySelector(`vscode-single-select[name="${elemName}"]`) ||
+              inst.querySelector(`vscode-textfield[name="${elemName}"]`) ||
+              inst.querySelector(`vscode-textarea[name="${elemName}"]`) ||
+              inst.querySelector(`textarea[name="${elemName}"]`);
+
+            if (!input) {
+              console.warn(`[clPrompter] SUBMIT: No input found for ${elemName}`);
+              continue;
+            }
+
             let val = getInputValue(input);
+
             const wasModified = input.getAttribute('data-modified') === 'true';
             const defaultValue = input.getAttribute('data-default');
             const wasInOriginal = originalParamMap.hasOwnProperty(elemName);
@@ -3165,6 +3212,12 @@ document.getElementById("clForm").addEventListener("keydown", function (e) {
     document.getElementById("submitBtn").click();
   }
 });
+document.getElementById("clLabel").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    document.getElementById("submitBtn").click();
+  }
+});
 
 document.getElementById("cancelBtn").addEventListener("click", e => {
   e.preventDefault();
@@ -3201,6 +3254,10 @@ window.addEventListener('DOMContentLoaded', () => {
       'vscode-option',
       'vscode-divider'
     ];
+    const labelInput = document.getElementById("clLabel");
+    if (labelInput) {
+      labelInput.focus();
+    }
 
     console.log("[clPrompter] VS Code Elements availability:");
     availableComponents.forEach(component => {

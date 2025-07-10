@@ -4,3 +4,9 @@
         <Parm Kwd="THEN" PosNbr="2" KeyParm="NO" RtnVal="NO" PassVal="DFT" Type="CMD" Min="0" Max="1" Prompt="Command" PromptMsgID="TXT0826" Rstd="NO" AlwUnprt="YES" AlwVar="YES" Expr="NO" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="256" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="Command"></Parm>
     </Cmd>
 </QcdCLCmd>
+<QcdCLCmd DTDVersion="2.0">
+    <Cmd CmdName="CHGVAR" CmdLib="__LIBL" CCSID="37" HlpPnlGrp="QHCLCMD" HlpPnlGrpLib="__LIBL" HlpID="CHGVAR" MaxPos="2" Prompt="Change Variable" PromptMsgID="TXT0037" MsgF="QCPFMSG" MsgFLib="__LIBL" PmtFile="QCPFPMT" PmtFileLib="*LIBL" PmtFileMsg="DYNAMIC" ExecBatch="NO" ChgCmdExit="NO" RtvCmdExit="NO">
+        <Parm Kwd="VAR" PosNbr="1" KeyParm="NO" RtnVal="NO" PassVal="DFT" Type="VARNAME" Min="1" Max="1" Prompt="CL variable name" PromptMsgID="TXT1010" Len="22" Rstd="NO" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="NO" PassAtr="NO" Case="MONO" CCSID="JOB" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="Variable name"></Parm>
+        <Parm Kwd="VALUE" PosNbr="2" KeyParm="NO" RtnVal="NO" PassVal="DFT" Type="CHAR" Min="1" Max="1" Prompt="New value" PromptMsgID="TXT0775" Len="2000" Rstd="NO" AlwUnprt="YES" AlwVar="YES" Expr="YES" Full="NO" DspInput="YES" Vary="INT2" PassAtr="NO" Case="MONO" CCSID="JOB" InlPmtLen="2000" IsDtaAra="NO" IsFile="NO" IsPgm="NO" Choice="Character value"></Parm>
+    </Cmd>
+</QcdCLCmd>
