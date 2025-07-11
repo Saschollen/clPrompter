@@ -1,0 +1,641 @@
+
+export function getCLCheckerCPPSrc(schema: string, version: number) {
+
+    return `// C++ processing program for QCAPCMD SQL Function
+
+
+    /**********************************************************/
+    /* Copyright 2018-2025 by R. Cozzi, Jr.                   */
+    /* All rights reserved.                                   */
+    /* Syntax Check CL Commands via an SQL Fuction            */
+    /**********************************************************/
+
+#include <stdlib.h>
+#include <except.h>
+#include <signal.h>
+
+#include <qlg.h>
+#include <qlgcase.h>
+#include <letype.h>
+#include <lecond.h>
+#include <leenv.h>
+#include <qusec.h>
+#include <QMH.h>
+#include <QMHSNDPM.h>
+#include <QMHRCVPM.h>
+#include <QMHRTVM.h>
+#include <qcapcmd.h>
+#include <cpybytes.mih>
+
+#include <unistd.h>
+#include <stdio.h>
+#include <errno.h>
+#include <ctype.h>
+
+#include <inttypes.h>
+#include <sys/types.h>
+#ifndef __POSIX_LOCALE__
+#define __POSIX_LOCALE__
+#endif
+#include <langinfo.h>
+
+
+#define _TOUPPER 0
+#define _TOLOWER 1
+
+#include <SQLUDF.h>
+
+#include <cstring>
+#include <cctype>
+#include <string>
+#include <memory>
+
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+const int MAXCMD_LEN = 32700;
+
+// Helper functions and classes
+
+//  QUSEC class wrapper
+
+#ifndef _QUSEC_T
+#define _QUSEC_T
+typedef struct tag_QUS_EC
+ {
+    union {
+     int  Bytes_Provided;
+     int  length;
+    };
+    union {
+     int  Bytes_Available;
+     int  Bytes_Returned;
+    };
+    union {
+     char Exception_Id[7];
+     char msgid[7];
+    };
+    char Reserved;   // pad char
+    union {
+     char Exception_Data[1000];
+     char msgdta[1000];
+    };
+ } QUSEC_t;
+#endif
+
+
+class qusec
+{
+   public:
+      qusec() { init(); }
+
+   private:
+      QUSEC_t ec;
+
+   public:
+      void setLength(size_t l) {ec.Bytes_Provided = static_cast<int>(l); }
+      void clear() { memset((char*)&ec,0x00, sizeof(ec)); }
+      void init()  { memset((char*)&ec,0x00, sizeof(ec)); ec.Bytes_Provided = sizeof(ec); }
+      void reset() { memset((char*)&ec,0x00, sizeof(ec)); ec.Bytes_Provided = sizeof(ec); }
+
+      int  bytesReturned() { return ec.Bytes_Available; }
+      int  getLength()     { return ec.Bytes_Available; }
+      int  length()        { return ec.Bytes_Available; }
+      int  bytesAvail()    { return ec.Bytes_Available; }
+      int  getMsgDataLen() { return (ec.Bytes_Available-16); }
+
+      int  isEmpty()     { return (ec.Bytes_Available==0); }
+      int  isNotEmpty()  { return (ec.Bytes_Available>0);  }
+
+      int  isError()     { return (ec.Bytes_Available>0);  }
+      int  isNoError()   { return (ec.Bytes_Available==0); }
+      int  isNotError()  { return (ec.Bytes_Available==0); }
+
+      int  hasError()    { return (ec.Bytes_Available>0);  }
+      int  hasNoError()  { return (ec.Bytes_Available==0); }
+
+      int  hasErrors()   { return (ec.Bytes_Available>0);  }
+      int  hasNoErrors() { return (ec.Bytes_Available==0); }
+
+      int  isNoErrors()  { return (ec.Bytes_Available==0); }
+
+      bool compare(const char* pMsgID)
+      {
+          return (ec.Bytes_Available>0 && memcmp(ec.Exception_Id,pMsgID,
+                         std::min<int>(strlen(pMsgID), 7)
+                        )==0) ? true : false;
+      }
+      bool msgid(const char* pMsgID)
+      {
+          return (ec.Bytes_Available>0 && memcmp(ec.Exception_Id,pMsgID,
+                         std::min<int>(strlen(pMsgID), 7)
+                        )==0) ? true : false;
+      }
+      char* getMsgData(int msgOffset)
+      {
+        if (ec.length > 16)
+        {
+          ec.msgdta[ ec.length - 16 ] = 0x00;
+          return ec.msgdta + msgOffset;
+        }
+        else return NULL;
+      }
+      char* getMsgData()
+      {
+        if (ec.length > 16)
+        {
+          ec.msgdta[ ec.length - 16 ] = 0x00;
+          return ec.msgdta;
+        }
+        else return NULL;
+      }
+      char* getMsgID()
+      {
+        if (ec.length >= 16)
+        {
+          return ec.Exception_Id;
+        }
+        else return NULL;
+      }
+      char* msgid()
+      {
+        if (ec.length >= 16)
+        {
+          return ec.Exception_Id;
+        }
+        else return NULL;
+      }
+      char* msgdata()
+      {
+        if (ec.length > 16)
+        {
+          ec.msgdta[ ec.length - 16 ] = 0x00;
+          return ec.msgdta;
+        }
+        else return NULL;
+      }
+
+      operator void*() {
+        return static_cast<void*>(&ec);
+      }
+      operator Qus_EC_t*() {
+        return (Qus_EC_t*)&ec;
+      }
+      operator QUSEC_t*() {
+        return &ec;
+      }
+};
+
+
+bool startsWith(const char* str, const char* prefix) {
+    return strncmp(str, prefix, std::strlen(prefix)) == 0;
+}
+
+int makeUpper(char* szData, int inLen = 0, int ccsid = 0)
+{
+
+  Qlg_CCSID_ReqCtlBlk_T frcb;
+  qusec      ec;
+  long       len = 0;
+  char*      pIn = szData;
+  char*      pOut= szData;
+
+  memset((char*)&frcb,0x00,sizeof(frcb));
+  frcb.Type_of_Request = 1;
+  frcb.Case_Request = _TOUPPER;
+  frcb.CCSID_of_Input_Data = ccsid;
+
+  if (inLen <= 0)
+  {
+    len = strlen(pIn);
+  }
+  else
+  {
+    len = inLen;
+  }
+
+  ec.init();
+  if (len > 0)
+  {
+    QlgConvertCase( (char*) &frcb, (char*)pIn,
+                     pOut, &len ,
+                    (char*) &ec);
+  }
+  return len;
+}
+
+
+int makeLower(char* szData, int inLen = 0, int ccsid = 0)
+{
+
+  Qlg_CCSID_ReqCtlBlk_T frcb;
+  qusec ec;
+  long       len = 0;
+  char*      pIn = szData;
+  char*      pOut= szData;
+
+  memset((char*)&frcb,0x00,sizeof(frcb));
+  frcb.Type_of_Request = 1;
+  frcb.Case_Request = _TOLOWER;  // 0=Upper 1=Lower
+  frcb.CCSID_of_Input_Data = ccsid;
+
+  if (inLen <= 0)
+  {
+    len = strlen(pIn);
+  }
+  else
+  {
+    len = inLen;
+  }
+
+  ec.init();
+  if (len > 0)
+  {
+    QlgConvertCase( (char*) &frcb, (char*)pIn,
+                     pOut, &len ,
+                    (char*) &ec);
+  }
+  return len;
+}
+
+
+
+char* getNextParmIf( int& pC, int& argc, char** argv, int clearBuffSize = 0)
+{
+   char* pRtn = NULL;
+   if (argc > pC+1)
+   {
+      pRtn = argv[++pC];
+      if (clearBuffSize > 0)   // clear buffer? Then clear prior data (if any)
+      {
+        memset(pRtn, 0x00, clearBuffSize);
+      }
+   }
+   return pRtn;
+}
+#define inParm(_v)       char  *in##_v = (char *)getNextParmIf(p, argc, argv, 0)
+#define outParm(_v)      char  *out##_v = (char *)getNextParmIf(p, argc, argv, 1)
+#define inIndy(_v)       short *indyIn##_v = (short *)getNextParmIf(p, argc, argv, 0)
+#define outIndy(_v)      short *indy##_v = (short *)getNextParmIf(p, argc, argv, 2)
+
+#define cpyFixedToStr(dest, src, srclen)        \
+    do {                                        \
+        size_t i_copy = 0;                      \
+        for (; i_copy < (srclen); ++i_copy) {   \
+            if ((src)[i_copy] == '\0') break;   \
+            (dest)[i_copy] = (src)[i_copy];     \
+        }                                       \
+        (dest)[i_copy] = '\0';                  \
+    } while (0)
+
+#define copyPad(_t, _s) \
+ memset(_t, ' ', 10); \
+ _CPYBYTES(_t, _s, std::min<int>(10,strlen(_s)))
+
+#define makeAPIObjName(_out, _obj, _lib) \
+ memset(_out, ' ', 10); \
+ _CPYBYTES(_out, _obj, strlen(_obj)); \
+ memset(_out+10, ' ', 10); \
+ _CPYBYTES(_out+10, _lib, strlen(_lib))
+
+
+int xlateCheckOption(const char* pCheckOption);
+
+    // Prototype for retrieve Message text
+void rtvMsgText(char* pMsgText, int bufLen, qusec& ec);
+
+
+typedef _Packed struct tagScratch
+{
+    int eof;
+    int counter;
+} scratch_t;
+
+int main(int argc, char *argv[])
+{
+     /**********************************************************/
+     /* Copyright 2018-2025 by R. Cozzi, Jr.                   */
+     /* All rights reserved.                                   */
+     /* Syntax Check CL Commands via an SQL Fuction            */
+     /**********************************************************/
+
+     int p = 0;
+
+     //////////////////////////////////////////////
+     //  INPUT Parameters
+     //////////////////////////////////////////////
+     inParm(CMD);
+     inParm(CHECKOPT);
+
+     //////////////////////////////////////////////
+     //  OUTPUT Parameters
+     //////////////////////////////////////////////
+     outParm(ERRMSGID);
+     outParm(MSGTEXT);   // Future objective to create full resulting message text
+     outParm(CMD);       // Output reformatted command for pre-prompting OPTION(*PMT)
+
+     //////////////////////////////////////////////
+     //  Input Indicator Fields
+     //////////////////////////////////////////////
+
+     inIndy(CMD);
+     inIndy(CHECKOPT);
+        // Options may be any 1 of the following:
+        // Note upper/lower case and leading asterisk are ignored.
+        //   NULL or empty = Command Entry (non-program) CL (default)
+        //   *CL   - Command Entry (non-program) CL
+        //   *CLLE - ILE CL Program syntax
+        //   *CLP  - OPM CL Program syntax
+        //   *LIMIT - Limited User Commands
+        //   *CMD  - Command Definition Commands
+        //   *BND  - Binder Language Commands
+
+     //////////////////////////////////////////////
+     //  Output Indicator Fields
+     //////////////////////////////////////////////
+    outIndy(ERRMSGID);   // set to 0 by the macro
+    outIndy(MSGTEXT);    // set to 0 by the macro
+    outIndy(CMD);        // set to 0 by the macro
+
+     ////////////////////////////////////////////////////////////
+     //  SQL specific parameters
+     ////////////////////////////////////////////////////////////
+     char *sqlstate     = (char *)getNextParmIf(p, argc, argv);
+     char *funcName     = (char *)getNextParmIf(p, argc, argv);
+     char *specificName = (char *)getNextParmIf(p, argc, argv);
+     char *sqlmsgtext   = (char *)getNextParmIf(p, argc, argv);
+     char *scratchPad   = (char *)getNextParmIf(p, argc, argv);
+     int  *sqlOpCode    = (int  *)getNextParmIf(p, argc, argv);
+
+     ////////////////////////////////////////////////////////////
+     //  BEGIN main() body (after parms starts here)
+     ////////////////////////////////////////////////////////////
+
+     scratch_t* pScratch = (scratch_t *)scratchPad;
+      const int            MSGTEXT_LEN = 1024;
+      char                 APIFMT[] = "CPOP0100";
+      int                  ctlType = 0;
+      int                  ctlInv = 0;
+
+      _FEEDBACK            fc;
+      qusec           ec;
+
+      char            msgfile[20];
+      char            replyMSGQ[20];
+      char            msgID[7];
+      char            msgType[10];
+      char            toPgmq[10];
+      char            msgKey[4];
+      char            msgInfo[1024];
+      char            checkOption[256];
+
+
+       if (*sqlOpCode == SQLUDF_TF_OPEN)
+       {
+           pScratch->eof = 0;
+           pScratch->counter = 0;
+           return 0;
+       }
+
+       if (pScratch->eof != 0) {
+          strcpy(sqlstate,"02000");
+          return 0;
+       }
+//typedef _Packed struct Qca_PCMD_CPOP0100
+//{
+//      int  Command_Process_Type;
+//      char DBCS_Data_Handling;
+//      char Prompter_Action;
+//      char Command_String_Syntax;
+//      char Message_Key[4];
+//      int  CCSID_Command_String;
+//      char Reserved[5];
+//}  Qca_PCMD_CPOP0100_t;
+
+      Qca_PCMD_CPOP0100_t  ctrlBlock;
+      int                  ctrlBlockLen = sizeof(ctrlBlock);
+
+     memset((char*)msgID,' ',sizeof(msgID));
+     memset((char*)msgfile,' ',sizeof(msgfile));
+     memset((char*)toPgmq,' ',sizeof(toPgmq));
+     memset((char*)msgKey,' ',sizeof(msgKey));
+
+     memset((char*)&ctrlBlock,0x00,sizeof(ctrlBlock));
+
+     ctrlBlock.Command_Process_Type = 0;     // DFT: Mimic QCMDEXC
+     ctrlBlock.DBCS_Data_Handling = '0';     // 0 = Ignore DBCS, 1 = Handle DBCS
+     ctrlBlock.Prompter_Action = '0';        // 0 = Never prompt the command
+     ctrlBlock.Command_String_Syntax = '0';  // 0 = IBM i syntax, 1 = System/38
+     memset(ctrlBlock.Message_Key,' ', sizeof(ctrlBlock.Message_Key));
+     ctrlBlock.CCSID_Command_String = 0;
+
+     const int MAXCMD_LEN = 6000;           // Min updated CMD string area
+     const int MINCMD_BUFLEN = 1024;
+     const int cmdLen = strlen(inCMD);   // Input CMD string length
+     while (cmdLen > 0 && inCMD[cmdLen-1] == ' ') --cmdLen;
+
+     int rtnUpdatedCmdLen = 0;              // Length of returned Updated CMD string
+           // Calculate length for updated CMD string workspace
+     int returnedCmdBufferLen = std::max<int>(cmdLen * 2,MINCMD_BUFLEN)+1;
+     if (returnedCmdBufferLen > MAXCMD_LEN) returnedCmdBufferLen = MAXCMD_LEN;
+
+     // Allocate storage for that updated CMD string
+     // garbage collection is automatic with auto_ptr
+     // We could  use a hard coded char returnedCmdString[MAXCMD_LEN] instead if its more efficient.
+     char returnedCmdString[MAXCMD_LEN]
+
+           // Get a pointer to that Update CMD string storage
+     char* pReturnedCmd = returnedCmdString.get();
+
+     memset(msgType,0x00,sizeof(msgType));
+     ctrlBlock.Command_Process_Type = 1;
+     if (*indyInCHECKOPT >= 0 && strlen(inCHECKOPT) > 0)
+     {
+
+        while (*inCHECKOPT == ' ' || *inCHECKOPT == '*') {
+               ++inCHECKOPT;
+        }
+        char cmdCheckOption[64];
+        strcpy(cmdCheckOption, inCHECKOPT);
+        makeUpper(cmdCheckOption);
+        ctrlBlock.Command_Process_Type = xlateCheckOption(cmdCheckOption);
+      )
+
+     }
+
+
+#pragma exception_handler(MONMSG, 0, 0, _C2_MH_ESCAPE | _C2_MH_FUNCTION_CHECK,\
+                          _CTLA_HANDLE )
+
+      ec.init();
+      int len = strlen(inCMD);
+      while (len > 0 && inCMD[len-1] == ' ') --len;
+        // RUN CL Command using QCAPCMD
+      QCAPCMD(inCMD,
+              cmdLen,
+              &ctrlBlock,
+              ctrlBlockLen,
+              APIFMT,
+              pReturnedCmd,
+              returnedCmdBufferLen,
+              &rtnUpdatedCmdLen,
+              &ec);
+
+MONMSG:
+      if (*indyCMD >= 0 && ctrlBlock.Command_Process_Type == 10)
+      {
+         pReturnedCmd[rtnUpdatedCmdLen] = 0x00;
+         strcpy(outCMD, pReturnedCmd);
+      }
+
+#pragma disable_handler
+CONTINUE:
+      if (ec.hasError() && *indyERRMSGID >= 0)  // Ignored if no ERRMSGID parm passed in
+      {
+        *indyERRMSGID = 0;
+        cpyFixedToStr(outERRMSGID, ec.msgid(), 7);
+        rtvMsgText(outMSGTEXT, MSGTEXT_LEN, ec);
+      }
+      else  // If no error on Syntax, return no rows/emptyset
+      {
+        strcpy(sqlstate,"02000");
+      }
+      pScratch->eof = 1;
+
+}  // end main
+
+
+int xlateCheckOption(const char* pCheckOption)
+{
+      // Setup up type of syntax checking to perform
+  if (startsWith(pCheckOption,"CL")     ||  // *CL
+      startsWith(pCheckOption,"CHK")    ||  // *CHK
+      startsWith(pCheckOption,"CHECK")  ||  // *CHECK    (Default: TYPE=>*CHECK)
+      startsWith(pCheckOption,"QCMDCHECK")  || // *QCMDCHECK
+      startsWith(pCheckOption,"QCMDENTRY")  || // *QCMDENTRY
+      startsWith(pCheckOption,"CMDENTRY")  ||  // *CMDENTRY
+      startsWith(pCheckOption,"QCMDCHK"))      // *QCMDCHK
+  {
+      ctrlBlock.Command_Process_Type = 1;     // 1=Command Entry CL Syntax check
+  }
+  else if (startsWith(pCheckOption,"LMT") ||  // *LMTUSER
+            startsWith(pCheckOption,"LIMIT"))  // *LIMITTED
+  {
+      ctrlBlock.Command_Process_Type = 2; // Command Line environment: Run
+  }
+  else if (startsWith(pCheckOption,"CMDLINE")   ||  // *CMDLINECHECK
+            startsWith(pCheckOption,"QCMDLINE")  ||  // *QCMDLINE
+            startsWith(pCheckOption,"LINE"))   // *LIMITEDUSER
+  {
+      ctrlBlock.Command_Process_Type = 3; // Command Line environment: Syntax Check Only
+  }
+  else if (startsWith(pCheckOption,"CLP")   ||  // *CLP
+            startsWith(pCheckOption,"OPM")   ||  // *CLPGM
+            startsWith(pCheckOption,"CLPGM"))    // *PGM
+  {
+      ctrlBlock.Command_Process_Type = 4; // Syntax Check CL Program statement
+  }
+  else if (startsWith(pCheckOption,"CMD"))   // *CMD
+  {
+      ctrlBlock.Command_Process_Type = 6;  // Command definition statements
+  }
+  else if (startsWith(pCheckOption,"BND")   ||  // *CLP
+            startsWith(pCheckOption,"BIND"))      // *PGM
+  {
+      ctrlBlock.Command_Process_Type = 7; // Binder Language CL command Syntax Check
+  }
+  else if (startsWith(pCheckOption,"PDM")   ||  // *CLP
+            startsWith(pCheckOption,"USRDFN") ||  // *CLPGM
+            startsWith(pCheckOption,"USERDEFN"))      // *PGM
+  {
+      ctrlBlock.Command_Process_Type = 8; // Syntax Check CL Program statement
+  }
+  else if (startsWith(pCheckOption,"CLLE")   ||  // *CLP
+            startsWith(pCheckOption,"ILECL") ||  // *CLPGM
+            startsWith(pCheckOption,"ILE"))      // *PGM  or *ILEPGM or *ILECLPGM
+  {
+      ctrlBlock.Command_Process_Type = 9; // Syntax Check CL Program statement
+  }
+  else if (startsWith(pCheckOption,"PMT")   ||  // *PMT
+            startsWith(pCheckOption,"PROMPT"))  // *PROMPTER
+  {   // 10 is prep for prompting.
+      ctrlBlock.Command_Process_Type = 10; // Syntax Check CL Program statement
+  }
+}
+
+void rtvMsgText(char* pMsgText, int bufLen, qusec& ec)
+{
+   char msgfile[21];
+   char msgPrefix[3];
+
+   Qus_EC_t  fc;
+   memset((char*)&fc, 0x00, sizeof(fc));
+   fc.Bytes_Provided = sizeof(fc);
+   fc.Bytes_Available = sizeof(fc);
+
+
+   if (ec.isEmpty())
+   {
+       return;
+   }
+
+   _CPYBYTES(msgPrefix, ec.msgid(), 2);
+   msgPrefix[2] = 0x00;
+
+   if (strcmp(msgPrefix,"CP")==0)
+   {
+      makeAPIObjName(msgfile,"QCPFMSG","*LIBL");
+   }
+   else if (strcmp(msgPrefix,"RN")==0)
+   {
+      makeAPIObjName(msgfile,"QRPGLEMSG","QDEVTOOLS");
+   }
+   else if (strcmp(msgPrefix,"HT")==0)
+   {
+      makeAPIObjName(msgfile,"QHTTPMSG","QHTTPSVR");
+   }
+   else if (strcmp(msgPrefix,"CE")==0)
+   {
+      makeAPIObjName(msgfile,"QCEEMSG","QSYS");
+   }
+   else if (strcmp(msgPrefix,"GU")==0)
+   {
+      makeAPIObjName(msgfile,"QGUIMSG","QSYS");
+   }
+   else if (strcmp(msgPrefix,"IW")==0)
+   {
+      makeAPIObjName(msgfile,"QIWSMSG","QSYS");
+   }
+
+
+     memset(pMsgText,0x00, bufLen);
+      char APIFMT[9] = "RTVM0100";
+      char includeMSGDATA[11];
+      char fmtCTL[11];
+      char msgid[8];
+      char* pMsgData = ec.msgdata();
+      int  msgDataLen = ec.getMsgDataLen();
+
+      copyPad(includeMSGDATA,"*YES");
+      copyPad(fmtCTL,"*NO");
+      cpyFixedToStr(msgid,ec.msgid(),7);
+
+     QMHRTVM(pMsgText,
+             bufLen,
+             APIFMT,
+             msgid,
+             msgfile,
+             pMsgData,
+             msgDataLen,
+             includeMSGDATA,
+             fmtCTL,
+             &fc);
+     if (fc.Bytes_Available == 0) {
+      Qmh_Rtvm_RTVM0100_t* pRtnMsg = (Qmh_Rtvm_RTVM0100_t*) pMsgText;
+      _CPYBYTES(pMsgText, pMsgText + sizeof(Qmh_Rtvm_RTVM0100_t), pRtnMsg->Length_Message_Returned);
+     }
+     return;
+} `;
+}
