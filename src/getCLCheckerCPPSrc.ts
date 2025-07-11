@@ -1,8 +1,12 @@
 
 export function getCLCheckerCPPSrc(schema: string, version: number) {
 
-    return `// C++ processing program for QCAPCMD SQL Function
+    return ` // C++ processing program for QCAPCMD SQL Function
+  // To compile:
+  //    CRTCPPMOD MODULE(CODE4I/COZ_CAPCMD) SRCFILE(CODE4I/QCSRC) SRCMBR(COZ_CAPCMD)
+  //    CRTPGM    PGM(CODE4I/COZ_CAPCMD) MODULE(CODE4I/COZ_CAPCMD)
 
+  // be sure to replace the library with your own library name
 
     /**********************************************************/
     /* Copyright 2018-2025 by R. Cozzi, Jr.                   */
@@ -54,8 +58,6 @@ export function getCLCheckerCPPSrc(schema: string, version: number) {
 #include <algorithm>
 
 using namespace std;
-
-const int MAXCMD_LEN = 32700;
 
 // Helper functions and classes
 
@@ -382,16 +384,6 @@ int main(int argc, char *argv[])
       _FEEDBACK            fc;
       qusec           ec;
 
-      char            msgfile[20];
-      char            replyMSGQ[20];
-      char            msgID[7];
-      char            msgType[10];
-      char            toPgmq[10];
-      char            msgKey[4];
-      char            msgInfo[1024];
-      char            checkOption[256];
-
-
        if (*sqlOpCode == SQLUDF_TF_OPEN)
        {
            pScratch->eof = 0;
@@ -417,11 +409,6 @@ int main(int argc, char *argv[])
       Qca_PCMD_CPOP0100_t  ctrlBlock;
       int                  ctrlBlockLen = sizeof(ctrlBlock);
 
-     memset((char*)msgID,' ',sizeof(msgID));
-     memset((char*)msgfile,' ',sizeof(msgfile));
-     memset((char*)toPgmq,' ',sizeof(toPgmq));
-     memset((char*)msgKey,' ',sizeof(msgKey));
-
      memset((char*)&ctrlBlock,0x00,sizeof(ctrlBlock));
 
      ctrlBlock.Command_Process_Type = 0;     // DFT: Mimic QCMDEXC
@@ -433,27 +420,18 @@ int main(int argc, char *argv[])
 
      const int MAXCMD_LEN = 6000;           // Min updated CMD string area
      const int MINCMD_BUFLEN = 1024;
-     const int cmdLen = strlen(inCMD);   // Input CMD string length
+     int cmdLen = strlen(inCMD);   // Input CMD string length
      while (cmdLen > 0 && inCMD[cmdLen-1] == ' ') --cmdLen;
 
-     int rtnUpdatedCmdLen = 0;              // Length of returned Updated CMD string
-           // Calculate length for updated CMD string workspace
-     int returnedCmdBufferLen = std::max<int>(cmdLen * 2,MINCMD_BUFLEN)+1;
-     if (returnedCmdBufferLen > MAXCMD_LEN) returnedCmdBufferLen = MAXCMD_LEN;
+      // Calculate length for updated CMD string workspace
+     int  rtnUpdatedCmdLen = 0;
+     int  returnedCmdBufferLen = MAXCMD_LEN;
+     char returnedCmdString[MAXCMD_LEN];
+     char* pRtnCmd = returnedCmdString;
 
-     // Allocate storage for that updated CMD string
-     // garbage collection is automatic with auto_ptr
-     // We could  use a hard coded char returnedCmdString[MAXCMD_LEN] instead if its more efficient.
-     char returnedCmdString[MAXCMD_LEN]
-
-           // Get a pointer to that Update CMD string storage
-     char* pReturnedCmd = returnedCmdString.get();
-
-     memset(msgType,0x00,sizeof(msgType));
      ctrlBlock.Command_Process_Type = 1;
      if (*indyInCHECKOPT >= 0 && strlen(inCHECKOPT) > 0)
      {
-
         while (*inCHECKOPT == ' ' || *inCHECKOPT == '*') {
                ++inCHECKOPT;
         }
@@ -461,24 +439,20 @@ int main(int argc, char *argv[])
         strcpy(cmdCheckOption, inCHECKOPT);
         makeUpper(cmdCheckOption);
         ctrlBlock.Command_Process_Type = xlateCheckOption(cmdCheckOption);
-      )
-
-     }
+      }
 
 
 #pragma exception_handler(MONMSG, 0, 0, _C2_MH_ESCAPE | _C2_MH_FUNCTION_CHECK,\
                           _CTLA_HANDLE )
 
       ec.init();
-      int len = strlen(inCMD);
-      while (len > 0 && inCMD[len-1] == ' ') --len;
         // RUN CL Command using QCAPCMD
       QCAPCMD(inCMD,
               cmdLen,
               &ctrlBlock,
               ctrlBlockLen,
               APIFMT,
-              pReturnedCmd,
+              returnedCmdString,
               returnedCmdBufferLen,
               &rtnUpdatedCmdLen,
               &ec);
@@ -486,8 +460,8 @@ int main(int argc, char *argv[])
 MONMSG:
       if (*indyCMD >= 0 && ctrlBlock.Command_Process_Type == 10)
       {
-         pReturnedCmd[rtnUpdatedCmdLen] = 0x00;
-         strcpy(outCMD, pReturnedCmd);
+         returnedCmdString[rtnUpdatedCmdLen] = 0x00;
+         strcpy(outCMD, returnedCmdString);
       }
 
 #pragma disable_handler
@@ -509,6 +483,7 @@ CONTINUE:
 
 int xlateCheckOption(const char* pCheckOption)
 {
+    int typeCheck = 1;
       // Setup up type of syntax checking to perform
   if (startsWith(pCheckOption,"CL")     ||  // *CL
       startsWith(pCheckOption,"CHK")    ||  // *CHK
@@ -518,51 +493,52 @@ int xlateCheckOption(const char* pCheckOption)
       startsWith(pCheckOption,"CMDENTRY")  ||  // *CMDENTRY
       startsWith(pCheckOption,"QCMDCHK"))      // *QCMDCHK
   {
-      ctrlBlock.Command_Process_Type = 1;     // 1=Command Entry CL Syntax check
+      typeCheck = 1;     // 1=Command Entry CL Syntax check
   }
   else if (startsWith(pCheckOption,"LMT") ||  // *LMTUSER
             startsWith(pCheckOption,"LIMIT"))  // *LIMITTED
   {
-      ctrlBlock.Command_Process_Type = 2; // Command Line environment: Run
+      typeCheck = 2; // Command Line environment: Run
   }
   else if (startsWith(pCheckOption,"CMDLINE")   ||  // *CMDLINECHECK
             startsWith(pCheckOption,"QCMDLINE")  ||  // *QCMDLINE
             startsWith(pCheckOption,"LINE"))   // *LIMITEDUSER
   {
-      ctrlBlock.Command_Process_Type = 3; // Command Line environment: Syntax Check Only
+      typeCheck = 3; // Command Line environment: Syntax Check Only
   }
   else if (startsWith(pCheckOption,"CLP")   ||  // *CLP
             startsWith(pCheckOption,"OPM")   ||  // *CLPGM
             startsWith(pCheckOption,"CLPGM"))    // *PGM
   {
-      ctrlBlock.Command_Process_Type = 4; // Syntax Check CL Program statement
+      typeCheck = 4; // Syntax Check CL Program statement
   }
   else if (startsWith(pCheckOption,"CMD"))   // *CMD
   {
-      ctrlBlock.Command_Process_Type = 6;  // Command definition statements
+      typeCheck = 6;  // Command definition statements
   }
   else if (startsWith(pCheckOption,"BND")   ||  // *CLP
             startsWith(pCheckOption,"BIND"))      // *PGM
   {
-      ctrlBlock.Command_Process_Type = 7; // Binder Language CL command Syntax Check
+      typeCheck = 7; // Binder Language CL command Syntax Check
   }
   else if (startsWith(pCheckOption,"PDM")   ||  // *CLP
             startsWith(pCheckOption,"USRDFN") ||  // *CLPGM
             startsWith(pCheckOption,"USERDEFN"))      // *PGM
   {
-      ctrlBlock.Command_Process_Type = 8; // Syntax Check CL Program statement
+      typeCheck = 8; // Syntax Check CL Program statement
   }
   else if (startsWith(pCheckOption,"CLLE")   ||  // *CLP
             startsWith(pCheckOption,"ILECL") ||  // *CLPGM
             startsWith(pCheckOption,"ILE"))      // *PGM  or *ILEPGM or *ILECLPGM
   {
-      ctrlBlock.Command_Process_Type = 9; // Syntax Check CL Program statement
+      typeCheck = 9; // Syntax Check CL Program statement
   }
   else if (startsWith(pCheckOption,"PMT")   ||  // *PMT
             startsWith(pCheckOption,"PROMPT"))  // *PROMPTER
   {   // 10 is prep for prompting.
-      ctrlBlock.Command_Process_Type = 10; // Syntax Check CL Program statement
+      typeCheck = 10; // Syntax Check CL Program statement
   }
+  return typeCheck;
 }
 
 void rtvMsgText(char* pMsgText, int bufLen, qusec& ec)
@@ -637,5 +613,5 @@ void rtvMsgText(char* pMsgText, int bufLen, qusec& ec)
       _CPYBYTES(pMsgText, pMsgText + sizeof(Qmh_Rtvm_RTVM0100_t), pRtnMsg->Length_Message_Returned);
      }
      return;
-} `;
+}`;
 }
