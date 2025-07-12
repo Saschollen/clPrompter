@@ -1,7 +1,8 @@
 
 export function getCLCheckerCPPSrc(schema: string, version: number) {
 
-    return ` // C++ processing program for QCAPCMD SQL Function
+    return `
+ // C++ processing program for QCAPCMD SQL Function
   // To compile:
   //    CRTCPPMOD MODULE(CODE4I/COZ_CAPCMD) SRCFILE(CODE4I/QCSRC) SRCMBR(COZ_CAPCMD)
   //    CRTPGM    PGM(CODE4I/COZ_CAPCMD) MODULE(CODE4I/COZ_CAPCMD)
@@ -19,6 +20,7 @@ export function getCLCheckerCPPSrc(schema: string, version: number) {
 #include <signal.h>
 
 #include <qlg.h>
+#include <qlgcase.h>
 #include <qlgcase.h>
 #include <letype.h>
 #include <lecond.h>
@@ -293,8 +295,9 @@ char* getNextParmIf( int& pC, int& argc, char** argv, int clearBuffSize = 0)
     } while (0)
 
 #define copyPad(_t, _s) \
- memset(_t, ' ', 10); \
- _CPYBYTES(_t, _s, std::min<int>(10,strlen(_s)))
+ memset(_t, 0x00, sizeof(_t)); \
+ memset(_t, ' ', sizeof(_t)-1); \
+ _CPYBYTES(_t, _s, std::min<int>(sizeof(_t)-1,strlen(_s)))
 
 #define makeAPIObjName(_out, _obj, _lib) \
  memset(_out, ' ', 10); \
@@ -303,16 +306,28 @@ char* getNextParmIf( int& pC, int& argc, char** argv, int clearBuffSize = 0)
  _CPYBYTES(_out+10, _lib, strlen(_lib))
 
 
+int getNextSyntaxErrorMsg(char* msgkey, char* msgid, char* msgtext);
 int xlateCheckOption(const char* pCheckOption);
 
     // Prototype for retrieve Message text
 void rtvMsgText(char* pMsgText, int bufLen, qusec& ec);
 
+#define MAX_MSG_ENTRIES 16  // Limit to 16 syntax error message (rarely more than 8)
+#define MAXMSGTEXT_LEN 512  // Limit message text to the first 1/2k of data
+
+typedef struct tagMsgEntry_t {
+    char msgid[7];
+    char msgtext[MAXMSGTEXT_LEN+1];
+} msgentry_t;
+
 
 typedef _Packed struct tagScratch
 {
+    int len;  // scratch pad length as set by the SCRATCHPAD kwd in the UDTF
     int eof;
-    int counter;
+    int msgCount;
+    int msgIndex;
+    msgentry_t msg[MAX_MSG_ENTRIES]; // Array of message entries
 } scratch_t;
 
 int main(int argc, char *argv[])
@@ -334,14 +349,13 @@ int main(int argc, char *argv[])
      //////////////////////////////////////////////
      //  OUTPUT Parameters
      //////////////////////////////////////////////
-     outParm(ERRMSGID);
+     outParm(MSGID);
      outParm(MSGTEXT);   // Future objective to create full resulting message text
      outParm(CMD);       // Output reformatted command for pre-prompting OPTION(*PMT)
 
      //////////////////////////////////////////////
      //  Input Indicator Fields
      //////////////////////////////////////////////
-
      inIndy(CMD);
      inIndy(CHECKOPT);
         // Options may be any 1 of the following:
@@ -357,7 +371,7 @@ int main(int argc, char *argv[])
      //////////////////////////////////////////////
      //  Output Indicator Fields
      //////////////////////////////////////////////
-    outIndy(ERRMSGID);   // set to 0 by the macro
+    outIndy(MSGID);   // set to 0 by the macro
     outIndy(MSGTEXT);    // set to 0 by the macro
     outIndy(CMD);        // set to 0 by the macro
 
@@ -386,15 +400,10 @@ int main(int argc, char *argv[])
 
        if (*sqlOpCode == SQLUDF_TF_OPEN)
        {
-           pScratch->eof = 0;
-           pScratch->counter = 0;
-           return 0;
-       }
+           int len = pScratch->len; // save scratchpad length
+           memset(pScratch,0x00, sizeof(scratchPad));
+           pScratch->len = len; // restore scratchpad length
 
-       if (pScratch->eof != 0) {
-          strcpy(sqlstate,"02000");
-          return 0;
-       }
 //typedef _Packed struct Qca_PCMD_CPOP0100
 //{
 //      int  Command_Process_Type;
@@ -466,17 +475,65 @@ MONMSG:
 
 #pragma disable_handler
 CONTINUE:
-      if (ec.hasError() && *indyERRMSGID >= 0)  // Ignored if no ERRMSGID parm passed in
+      if (ec.hasNoErrors())  // Ignored if no MSGID parm passed in
       {
-        *indyERRMSGID = 0;
-        cpyFixedToStr(outERRMSGID, ec.msgid(), 7);
-        rtvMsgText(outMSGTEXT, MSGTEXT_LEN, ec);
-      }
-      else  // If no error on Syntax, return no rows/emptyset
-      {
+        pScratch->eof = 1;
         strcpy(sqlstate,"02000");
+        return 0;
       }
-      pScratch->eof = 1;
+      // save the general "there was a syntax error" msg as msgid[0] and send/return last
+      cpyFixedToStr(pScratch->msg[pScratch->msgCount].msgid, ec.msgid(), 7);
+      rtvMsgText(pScratch->msg[pScratch->msgCount].msgtext, MAXMSGTEXT_LEN, ec);
+      pScratch->msgCount++;
+
+      // Load all (any?) syntax error messages into Scratchpad (upto 16 are supported, currently)
+      char msgkey[4];
+      memset(msgkey, 0x00, sizeof(msgkey));
+
+      while (getNextSyntaxErrorMsg(msgkey, pScratch->msg[pScratch->msgCount].msgid, pScratch->msg[pScratch->msgCount].msgtext))
+      {
+        pScratch->msgCount++;
+      }
+      if (pScratch->msgCount==0)
+      {
+        pScratch->eof = 1;
+        strcpy(sqlstate,"02000");
+        return 0;
+      }
+      else {
+        pScratch->msgIndex = 1;  // Start at first index (not 0) if any
+      }
+
+    }  // end SQLUDF_TF_OPEN
+
+    if (pScratch->eof != 0) {
+      strcpy(sqlstate,"02000");
+    }
+      // SQLUDF_TF_FETCH  - F E T C H
+    if (*sqlOpCode == SQLUDF_TF_FETCH)
+    {
+         *indyCMD =  -1;
+         outCMD[0] = 0x00;
+
+        if (pScratch->msgIndex!=0 && pScratch->msgIndex < pScratch->msgCount)
+        {
+            cpyFixedToStr(outMSGID, pScratch->msg[pScratch->msgIndex].msgid, 7);
+            strcpy(outMSGTEXT, pScratch->msg[pScratch->msgIndex].msgtext);
+            pScratch->msgIndex++;
+        }
+        else if (pScratch->msgIndex >= pScratch->msgCount)
+        {
+            cpyFixedToStr(outMSGID, pScratch->msg[0].msgid, 7);
+            strcpy(outMSGTEXT, pScratch->msg[0].msgtext);
+            pScratch->msgIndex=0;
+        }
+        else
+        {
+          pScratch->eof = 1;
+          strcpy(sqlstate,"02000");
+          return 0;
+        }
+    }
 
 }  // end main
 
@@ -584,22 +641,22 @@ void rtvMsgText(char* pMsgText, int bufLen, qusec& ec)
    {
       makeAPIObjName(msgfile,"QIWSMSG","QSYS");
    }
-
-
-     memset(pMsgText,0x00, bufLen);
       char APIFMT[9] = "RTVM0100";
       char includeMSGDATA[11];
       char fmtCTL[11];
       char msgid[8];
       char* pMsgData = ec.msgdata();
       int  msgDataLen = ec.getMsgDataLen();
+      char buffer[4096];
 
+      memset(pMsgText,0x00, bufLen);
+      memset(buffer,0x00, sizeof(buffer));
       copyPad(includeMSGDATA,"*YES");
       copyPad(fmtCTL,"*NO");
       cpyFixedToStr(msgid,ec.msgid(),7);
 
-     QMHRTVM(pMsgText,
-             bufLen,
+     QMHRTVM(buffer,
+             sizeof(buffer),
              APIFMT,
              msgid,
              msgfile,
@@ -609,9 +666,41 @@ void rtvMsgText(char* pMsgText, int bufLen, qusec& ec)
              fmtCTL,
              &fc);
      if (fc.Bytes_Available == 0) {
-      Qmh_Rtvm_RTVM0100_t* pRtnMsg = (Qmh_Rtvm_RTVM0100_t*) pMsgText;
-      _CPYBYTES(pMsgText, pMsgText + sizeof(Qmh_Rtvm_RTVM0100_t), pRtnMsg->Length_Message_Returned);
+      Qmh_Rtvm_RTVM0100_t* pRtnMsg = (Qmh_Rtvm_RTVM0100_t*) buffer;
+      _CPYBYTES(pMsgText, buffer + sizeof(Qmh_Rtvm_RTVM0100_t), pRtnMsg->Length_Message_Returned);
      }
      return;
+}
+
+// This function grabs each command generated by the syntax checker
+// Note that normally, only the first one (which is usually the last
+// syntax error, is returned.
+int getNextSyntaxErrorMsg(char* pMsgKey, char* msgid, char* msgtext)
+{
+  char APIFMT[] = "RCVM0200";
+  char MSGTYPE[11];
+  char MSGQ[11];
+  int  WAIT = 0;
+  char msgBuffer[4096];
+  Qmh_Rcvpm_RCVM0200_t* pMsgInfo = (Qmh_Rcvpm_RCVM0200_t*)msgBuffer;
+  QUSEC_t ec;
+
+  copyPad(MSGTYPE,"*NEXT");
+  copyPad(MSGQ,"*");
+  memset(msgBuffer, 0x00, sizeof(msgBuffer));
+
+  QMHRCVPM(msgBuffer, sizeof(msgBuffer), QMH_FMT_RCVM0200,
+           MSGQ, 1, MSGTYPE, pMsgKey, WAIT,
+           QMH_MSGACT_OLD, &ec);
+  if (ec.Bytes_Returned == 0 && pMsgInfo->Bytes_Returned > 8)
+  {
+      _CPYBYTES(msgid, pMsgInfo->Message_Id,7);
+      _CPYBYTES(pMsgKey, pMsgInfo->Message_Key,4);
+      int mOffset = pMsgInfo->Length_Data_Returned;
+      int maxCopyLen = std::min<int>(512,pMsgInfo->Length_Message_Returned);
+      _CPYBYTES(msgtext, msgBuffer + sizeof(Qmh_Rcvpm_RCVM0200_t) + mOffset, maxCopyLen);
+      return 1;
+  }
+  return 0;
 }`;
 }

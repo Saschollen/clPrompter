@@ -1,19 +1,21 @@
 export function getCLCheckerUDTFSrc(schema: string, version: number) {
-    return `CREATE or REPLACE FUNCTION ${schema}.QCAPCMD (
-                                  CMD    VARCHAR(32700),
-        -- Default is regular Command entry CL syntax checking
+    return `
+CREATE or REPLACE FUNCTION ${schema}.QCAPCMD (
+                                  CMD    VARCHAR(6000),
                                   CHECKOPT  VARCHAR(14) DEFAULT '*CL'
                                           )
               returns table (
                   msgid   varchar(7),
-                  msgtext varchar(1024),
-                  cmdstring varchar(6000)
+                  msgtext varchar(512),
+                  cmdstring varchar(6000) -- reserved
               )
      LANGUAGE C++
      NO SQL
      NOT DETERMINISTIC
      NOT FENCED
-     SCRATCHPAD 128
+     FINAL CALL
+     DISALLOW PARALLEL
+     SCRATCHPAD 8400
      SPECIFIC COZ_CAPCMD
      EXTERNAL NAME '${schema}/COZ_CAPCMD'
      PARAMETER STYLE DB2SQL;
