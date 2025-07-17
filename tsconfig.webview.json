@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es2020",
+    "lib": ["es2020", "dom"],
+    "outDir": "media",
+    "sourceMap": false,
+    "strict": true,
+    "types": [],
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/clParmInput.ts",
+    "src/promptHelpers.ts"
+  ]
+}

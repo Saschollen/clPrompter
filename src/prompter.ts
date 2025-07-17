@@ -16,37 +16,6 @@ function logMessage(...args: any[]): void {
   }
 }
 
-// ✅ Add this helper function to extension.ts (around line 40, before the ClPromptPanel class)
-export function findCommandRange(lines: string[], currentLine: number): { startLine: number; endLine: number } {
-  let startLine = currentLine;
-  let endLine = currentLine;
-
-  // Find the start of the command (look backward for continuation)
-  while (startLine > 0) {
-    const prevLine = lines[startLine - 1].trimEnd();
-    if (prevLine.endsWith('+') || prevLine.endsWith('-')) {
-      startLine--;
-    } else {
-      break;
-    }
-  }
-
-  // Find the end of the command (look forward for continuation)
-  let lineIndex = startLine;
-  while (lineIndex < lines.length) {
-    const line = lines[lineIndex].trimEnd();
-    endLine = lineIndex;
-
-    if (line.endsWith('+') || line.endsWith('-')) {
-      lineIndex++;
-    } else {
-      break;
-    }
-  }
-
-  return { startLine, endLine };
-}
-
 export function getHtmlForPrompter(
   webview: vscode.Webview,
   extensionUri: vscode.Uri,
@@ -56,13 +25,18 @@ export function getHtmlForPrompter(
 ): Promise<string> {
 
   const htmlPath = path.join(__dirname, '..', 'media', 'prompter.html');
-  const mainJs = webview.asWebviewUri(
+  let mainJs = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, 'media', 'main.js')
-  );
-  const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(extensionUri, 'media', 'style.css')
-  );
+  ).toString();
 
+  let styleUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, 'media', 'style.css')
+  ).toString();
+
+  // styleUri = styleUri.replace('file%2B.', 'file+.');
+  // mainJs = mainJs.replace('file%2B.', 'file+.');
+
+  console.log(`[clPrompter] extensionUri: ${htmlPath}`);
   console.log(`[clPrompter] htmlPath: ${htmlPath}`);
   console.log(`[clPrompter] main.js: ${mainJs}`);
   console.log(`[clPrompter] styleUri: ${styleUri}`);
@@ -80,8 +54,8 @@ export function getHtmlForPrompter(
       const replacedHtml = html
         .replace(/{{nonce}}/g, nonce)
         .replace(/{{cspSource}}/g, webview.cspSource)
-        .replace(/{{mainJs}}/g, mainJs.toString())
-        .replace(/{{styleUri}}/g, styleUri.toString())
+        .replace(/{{mainJs}}/g, mainJs)
+        .replace(/{{styleUri}}/g, styleUri)
         .replace(/{{cmdName}}/g, qualCmdName)
         .replace(/{{xml}}/g, xml.replace(/"/g, '&quot;')); // Escape double quotes for safety
 

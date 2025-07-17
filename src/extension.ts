@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { DOMParser } from '@xmldom/xmldom';
 
-import { buildAllowedValsMap } from './extractor';
+import { collectCLCmd, buildAllowedValsMap } from './extractor';
 import { generatePopulationInstructions } from './populator';
 import { formatCLCmd, tokenizeCL, parseCL, formatCL_SEU } from './tokenizeCL';
 
@@ -9,7 +9,6 @@ import { CodeForIBMi } from "@halcyontech/vscode-ibmi-types";
 export let code4i: CodeForIBMi;
 import { Extension, extensions } from "vscode";
 import {
-    extractFullCLCmd,
     extractAllowedValsAndTypes,
     quoteIfNeeded,
     buildCLCommand
@@ -20,7 +19,7 @@ import {
     ParmMeta
 } from './parseCL';
 
-import { getHtmlForPrompter, findCommandRange } from './prompter';
+import { getHtmlForPrompter } from './prompter';
 import { buildAPI2PartName } from './QlgPathName';
 import { getCMDXML } from './getcmdxml';
 
@@ -87,17 +86,10 @@ export class ClPromptPanel {
 
         const editor = vscode.window.activeTextEditor;
         if (editor) {
-            const allLines = Array.from({ length: editor.document.lineCount }, (_, i) =>
-                editor.document.lineAt(i).text
-            );
-            const currentLine = editor.selection.active.line;
-
             // ✅ Use extractFullCLCmd for the command string
-            const cmdResult = extractFullCLCmd(allLines, currentLine);
+            const cmdResult = collectCLCmd(editor);
             fullCmd = cmdResult.command;
-
-            // ✅ Use findCommandRange for the line range (could also use cmdResult.startLine/endLine)
-            commandRange = findCommandRange(allLines, currentLine);
+            commandRange = { startLine: cmdResult.startLine, endLine: cmdResult.endLine };
 
             // ✅ Optional: Verify both methods agree on the range
             console.log(`[clPrompter] Command range: ${commandRange.startLine}-${commandRange.endLine}`);

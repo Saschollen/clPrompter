@@ -102,7 +102,10 @@
         "clPrompter.cmdKwdCase": {
           "type": "number",
           "default": 0,
-          "enum": [0, 1],
+          "enum": [
+            0,
+            1
+          ],
           "description": "Controls case conversion for CL command parameter names (keywords): 0 = UPPERCASE, 1 = lowercase."
         }
       }
@@ -118,15 +121,18 @@
     }
   },
   "scripts": {
+    "compile-webview": "tsc -p tsconfig.webview.json",
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "lint": "eslint",
-    "watch": "tsc -w -p ./"
+    "watch": "tsc -w -p ./",
+    "build": "npm run compile && npm run compile-webview"
   },
   "devDependencies": {
-    "@types/node": "^22.15.30",
+    "@types/node": "20.8.10",
     "@types/vscode": "^1.73.0",
     "@types/xmldom": "^0.1.34",
+    "esbuild": "^0.25.6",
     "typescript": "^5.8.2"
   },
   "dependencies": {
